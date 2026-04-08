@@ -780,7 +780,7 @@ void Weapon_RocketLauncher_Fire (edict_t *ent)
 
 	VectorSet(offset, 8, 8, ent->viewheight-8);
 	P_ProjectSource (ent->client, ent->s.origin, offset, forward, right, start);
-	fire_rocket (ent, start, forward, damage, 650, damage_radius, radius_damage);
+	fire_rocket (ent, start, forward, damage, 200, damage_radius, radius_damage, 0);
 
 	// send muzzle flash
 	gi.WriteByte (svc_muzzleflash);
@@ -818,9 +818,15 @@ void Blaster_Fire (edict_t *ent, vec3_t g_offset, int damage, qboolean hyper, in
 	vec3_t	forward, right;
 	vec3_t	start;
 	vec3_t	offset;
+	int i;
+
+	if (!ent)
+		return;
 
 	if (is_quad)
 		damage *= 4;
+
+
 	AngleVectors (ent->client->v_angle, forward, right, NULL);
 	VectorSet(offset, 24, 8, ent->viewheight-8);
 	VectorAdd (offset, g_offset, offset);
@@ -829,7 +835,12 @@ void Blaster_Fire (edict_t *ent, vec3_t g_offset, int damage, qboolean hyper, in
 	VectorScale (forward, -2, ent->client->kick_origin);
 	ent->client->kick_angles[0] = -1;
 
-	fire_blaster (ent, start, forward, damage, 1000, effect, hyper);
+	for (i = 0; i < 8; i++) {
+		forward[0] += crandom() * .1;
+		forward[1] += crandom() * .1;
+		forward[2] += crandom() * .1;
+		fire_blaster(ent, start, forward, damage, 1000, effect, hyper);
+	}
 
 	// send muzzle flash
 	gi.WriteByte (svc_muzzleflash);

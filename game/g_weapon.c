@@ -566,10 +566,13 @@ void fire_grenade2 (edict_t *self, vec3_t start, vec3_t aimdir, int damage, int 
 fire_rocket
 =================
 */
-void rocket_touch (edict_t *ent, edict_t *other, cplane_t *plane, csurface_t *surf)
+void rocket_touch (edict_t *ent, edict_t *other, cplane_t *plane, csurface_t *surf, int bounce)
 {
-	vec3_t		origin;
+	vec3_t		origin, backwards, right, start;
 	int			n;
+
+	if (!ent)
+		return;
 
 	if (other == ent->owner)
 		return;
@@ -610,14 +613,50 @@ void rocket_touch (edict_t *ent, edict_t *other, cplane_t *plane, csurface_t *su
 	if (ent->waterlevel)
 		gi.WriteByte (TE_ROCKET_EXPLOSION_WATER);
 	else
-		gi.WriteByte (TE_ROCKET_EXPLOSION);
+	{
+		gi.WriteByte(TE_ROCKET_EXPLOSION);
+		if (ent->bounceCount < 3)
+		{
+			AngleVectors(ent->s.angles, backwards, right, NULL);
+			vec3_t offset = { 0, 0, 0 }; 
+			G_ProjectSource(ent->s.origin, offset, backwards, right, start);
+			VectorInverse(backwards);
+			backwards[0] += crandom() * .1;
+			backwards[1] += crandom() * .1;
+			backwards[2] += crandom() * .1;
+			ent->bounceCount += 1;
+			fire_rocket(ent->owner, start, backwards, 50, 200, 100, 20, ent->bounceCount);
+			G_FreeEdict(ent);
+		}
+	}
 	gi.WritePosition (origin);
 	gi.multicast (ent->s.origin, MULTICAST_PHS);
 
 	G_FreeEdict (ent);
 }
 
-void fire_rocket (edict_t *self, vec3_t start, vec3_t dir, int damage, int speed, float damage_radius, int radius_damage)
+/**void rocket_think(edict_t* ent)
+{
+
+	vec3_t start, forward, right;
+	int i;
+
+	if (!ent)
+		return;
+
+	AngleVectors(ent->s.angles, forward, right, NULL); 
+	G_ProjectSource(ent->s.origin, 0, forward, right, start);  
+
+	for(i = 0; i < 8; i++)
+		forward[0] += crandom() * .1;
+		forward[1] += crandom() * .1;
+		forward[2] += crandom() * .1;
+		VectorInverse(forward);
+		fire_blaster(ent, start, forward, 5, 1000, EF_BLASTER, false);
+}
+*/
+
+void fire_rocket (edict_t *self, vec3_t start, vec3_t dir, int damage, int speed, float damage_radius, int radius_damage, int bounce)
 {
 	edict_t	*rocket;
 
@@ -634,9 +673,10 @@ void fire_rocket (edict_t *self, vec3_t start, vec3_t dir, int damage, int speed
 	VectorClear (rocket->maxs);
 	rocket->s.modelindex = gi.modelindex ("models/objects/rocket/tris.md2");
 	rocket->owner = self;
+	rocket->bounceCount = bounce;
 	rocket->touch = rocket_touch;
 	rocket->nextthink = level.time + 8000/speed;
-	rocket->think = G_FreeEdict;
+	rocket->think = G_FreeEdict; 
 	rocket->dmg = damage;
 	rocket->radius_dmg = radius_damage;
 	rocket->dmg_radius = damage_radius;
