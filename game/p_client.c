@@ -1703,6 +1703,9 @@ void ClientThink (edict_t *ent, usercmd_t *ucmd)
 	// monster sighting AI
 	ent->light_level = ucmd->lightlevel;
 
+	if (ucmd->buttons)
+		gi.dprintf("buttons = %d\n", ucmd->buttons); 
+
 	// fire weapon from final position if needed
 	if (client->latched_buttons & BUTTON_ATTACK)
 	{
@@ -1761,6 +1764,7 @@ void ClientBeginServerFrame (edict_t *ent)
 		return;
 
 	client = ent->client;
+	ent->char_select = 1;
 
 	if (deathmatch->value &&
 		client->pers.spectator != client->resp.spectator &&

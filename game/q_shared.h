@@ -502,6 +502,7 @@ typedef struct
 //
 #define	BUTTON_ATTACK		1
 #define	BUTTON_USE			2
+#define BUTTON_ATTACK2		4
 #define	BUTTON_ANY			128			// any key whatsoever
 
 

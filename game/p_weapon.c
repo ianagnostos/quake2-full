@@ -451,6 +451,7 @@ void Weapon_Generic (edict_t *ent, int FRAME_ACTIVATE_LAST, int FRAME_FIRE_LAST,
 
 	if (ent->client->weaponstate == WEAPON_READY)
 	{
+
 		if ( ((ent->client->latched_buttons|ent->client->buttons) & BUTTON_ATTACK) )
 		{
 			ent->client->latched_buttons &= ~BUTTON_ATTACK;
@@ -818,6 +819,7 @@ void Blaster_Fire (edict_t *ent, vec3_t g_offset, int damage, qboolean hyper, in
 	vec3_t	forward, right;
 	vec3_t	start;
 	vec3_t	offset;
+	vec3_t  aim;
 	int i;
 
 	if (!ent)
@@ -835,44 +837,171 @@ void Blaster_Fire (edict_t *ent, vec3_t g_offset, int damage, qboolean hyper, in
 	VectorScale (forward, -2, ent->client->kick_origin);
 	ent->client->kick_angles[0] = -1;
 
+
 	for (i = 0; i < 8; i++) {
 		forward[0] += crandom() * .1;
 		forward[1] += crandom() * .1;
 		forward[2] += crandom() * .1;
 		fire_blaster(ent, start, forward, damage, 1000, effect, hyper);
-	}
+	}	
 
-	// send muzzle flash
-	gi.WriteByte (svc_muzzleflash);
-	gi.WriteShort (ent-g_edicts);
+	gi.WriteByte(svc_muzzleflash);
+	gi.WriteShort(ent - g_edicts);
 	if (hyper)
-		gi.WriteByte (MZ_HYPERBLASTER | is_silenced);
+		gi.WriteByte(MZ_HYPERBLASTER | is_silenced);
 	else
-		gi.WriteByte (MZ_BLASTER | is_silenced);
-	gi.multicast (ent->s.origin, MULTICAST_PVS);
-
+		gi.WriteByte(MZ_BLASTER | is_silenced);
+	gi.multicast(ent->s.origin, MULTICAST_PVS);
+	
 	PlayerNoise(ent, start, PNOISE_WEAPON);
 }
 
-
-void Weapon_Blaster_Fire (edict_t *ent)
+void Fishing_Hook(edict_t* ent)
 {
-	int		damage;
+	vec3_t forward, right, start, end, pull;
+	trace_t t;
+
+	if (!ent)
+		return;
+
+	AngleVectors(ent->client->v_angle, forward, right, NULL);
+
+	VectorCopy(ent->s.origin, start);
+	start[2] += ent->viewheight;
+
+	VectorMA(start, 1000, forward, end);
+
+	t = gi.trace(start, NULL, NULL, end, ent, MASK_SHOT);
+
+	if (t.fraction < 1.0 && t.ent && t.ent->takedamage && t.ent != ent)
+	{
+		VectorSubtract(ent->s.origin, t.ent->s.origin, pull);
+		VectorNormalize(pull);
+
+		VectorMA(t.ent->velocity, 700, pull, t.ent->velocity);
+
+		PlayerNoise(ent, start, PNOISE_WEAPON);
+	}
+	else
+	{
+		gi.sound(ent, CHAN_VOICE, gi.soundindex("weapons/noammo.wav"), 1, ATTN_NORM, 0);
+		gi.sound(ent, CHAN_WEAPON, gi.soundindex("mutant/mutatck1.wav"), 1, ATTN_NORM, 0);
+	}
+
+	ent->client->kick_angles[0] = -1;
+}
+
+//yianni
+void Jajaken_rock(edict_t* ent)
+{
+	vec3_t forward, right, start, end;
+	trace_t t;
+	float charge;
+	int damage;
+	int kick;
+	int reach;
+
+	if (!ent)
+		return;
+
+	if (!ent->isCharging)
+		return;
+
+	charge = level.time - ent->charge_time;
+
+	if (charge > 3.0)
+		charge = 3.0;
+
+	damage = 10 + (charge * 25);
+	kick = 100 + (charge * 100);
+
+	AngleVectors(ent->client->v_angle, forward, right, NULL);
+
+	VectorCopy(ent->s.origin, start);
+	start[2] += ent->viewheight;
+
+	reach = MELEE_DISTANCE + (MELEE_DISTANCE * charge);
+	VectorMA(start, reach, forward, end);
+
+	t = gi.trace(start, NULL, NULL, end, ent, MASK_SHOT);
+
+	if (t.fraction < 1.0 && t.ent && t.ent->takedamage && t.ent != ent)
+	{
+		T_Damage(t.ent, ent, ent, forward, t.endpos, vec3_origin, damage, kick, 0, MOD_HIT);
+		PlayerNoise(ent, start, PNOISE_WEAPON); 
+	}
+	else
+	{
+		gi.sound(ent, CHAN_VOICE, gi.soundindex("weapons/noammo.wav"), 1, ATTN_NORM, 0); 
+		gi.sound(ent, CHAN_WEAPON, gi.soundindex("mutant/mutatck1.wav"), 1, ATTN_NORM, 0);
+	}
+
+	forward[2] = 0;
+	VectorNormalize(forward);
+	
+	VectorMA(ent->velocity, (charge * 300), forward, ent->velocity);
+	ent->client->kick_angles[0] = -1;
+}
+
+
+void Weapon_Blaster_Fire(edict_t* ent)
+{
+	int damage;
+
+	if (!ent || !ent->client)
+		return;
 
 	if (deathmatch->value)
 		damage = 15;
 	else
 		damage = 10;
-	Blaster_Fire (ent, vec3_origin, damage, false, EF_BLASTER);
+
+	Blaster_Fire(ent, vec3_origin, damage, false, EF_BLASTER);
 	ent->client->ps.gunframe++;
-}
+} 
 
-void Weapon_Blaster (edict_t *ent)
+void Weapon_Blaster(edict_t* ent)
 {
-	static int	pause_frames[]	= {19, 32, 0};
-	static int	fire_frames[]	= {5, 0};
+	static int pause_frames[] = { 19, 32, 0 };
+	static int fire_frames[] = { 5, 0 };
 
-	Weapon_Generic (ent, 4, 8, 52, 55, pause_frames, fire_frames, Weapon_Blaster_Fire);
+	if (!ent || !ent->client)
+		return;
+
+	switch (ent->char_select) {
+	case 1:
+
+		if (ent->client->buttons & BUTTON_ATTACK2)
+		{
+			ent->isCharging = false;
+			Fishing_Hook(ent);
+			break;
+		}
+
+		if (ent->client->buttons & BUTTON_ATTACK)
+		{
+			if (!ent->isCharging)
+			{
+				ent->isCharging = true;
+				ent->charge_time = level.time;
+			}
+
+			ent->client->ps.gunframe = 4;
+			ent->client->weaponstate = WEAPON_READY;
+			break;
+		}
+		else if (ent->isCharging)
+		{
+			Jajaken_rock(ent);
+			ent->isCharging = false;
+			ent->client->weaponstate = WEAPON_READY;
+			break;
+		}
+		Weapon_Generic(ent, 4, 8, 52, 55, pause_frames, fire_frames, Weapon_Blaster_Fire);
+		break;
+	default:
+		Weapon_Generic(ent, 4, 8, 52, 55, pause_frames, fire_frames, Weapon_Blaster_Fire);
+	}
 }
 
 

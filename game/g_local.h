@@ -1112,5 +1112,11 @@ struct edict_s
 
 	int bounce;
 	int bounceCount;
+
+	int char_select;
+
+	//gon
+	float charge_time;
+	qboolean isCharging;
 };
 

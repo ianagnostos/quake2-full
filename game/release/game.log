@@ -1,7 +1,5 @@
 ﻿C:\Program Files\Microsoft Visual Studio\2022\Community\MSBuild\Microsoft\VC\v170\Microsoft.CppBuild.targets(517,5): warning MSB8004: Output Directory does not end with a trailing slash.  This build instance will add the slash as it is required to allow proper evaluation of the Output Directory.
-  g_weapon.c
-C:\Users\ianag\git\quake2-full\game\g_weapon.c(455,68): warning C4100: 'plane': unreferenced formal parameter
-C:\Users\ianag\git\quake2-full\game\g_weapon.c(569,89): warning C4100: 'bounce': unreferenced formal parameter
-C:\Users\ianag\git\quake2-full\game\g_weapon.c(677,16): warning C4113: 'void (__cdecl *)(edict_t *,edict_t *,cplane_t *,csurface_t *,int)' differs in parameter lists from 'void (__cdecl *)(edict_t *,edict_t *,cplane_t *,csurface_t *)'
+  p_weapon.c
+C:\Users\ianag\git\quake2-full\game\p_weapon.c(822,10): warning C4101: 'aim': unreferenced local variable
      Creating library .\..\release\gamex86.lib and object .\..\release\gamex86.exp
   game.vcxproj -> C:\Users\ianag\git\quake2-full\game\release\gamex86.dll

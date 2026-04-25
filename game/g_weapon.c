@@ -614,7 +614,7 @@ void rocket_touch (edict_t *ent, edict_t *other, cplane_t *plane, csurface_t *su
 		gi.WriteByte (TE_ROCKET_EXPLOSION_WATER);
 	else
 	{
-		gi.WriteByte(TE_ROCKET_EXPLOSION);
+		gi.WriteByte(TE_ROCKET_EXPLOSION);  
 		if (ent->bounceCount < 3)
 		{
 			AngleVectors(ent->s.angles, backwards, right, NULL);
@@ -953,4 +953,27 @@ void fire_bfg (edict_t *self, vec3_t start, vec3_t dir, int damage, int speed, f
 		check_dodge (self, bfg->s.origin, dir, speed);
 
 	gi.linkentity (bfg);
+}
+
+void Char_Melee_Press(edict_t* ent)
+{
+	if (!ent->isCharging)
+	{
+		ent->isCharging = true;
+		ent->charge_time = level.time;
+	}
+}
+
+void Char_Melee_Release(edict_t* ent)
+{
+	if (ent->isCharging)
+	{
+		Jajaken_rock(ent);
+		ent->isCharging = false;
+	}
+}
+
+void Char_Default_Fire(edict_t* ent)
+{
+	Blaster_Fire(ent, vec3_origin, 10, false, EF_BLASTER);
 }
