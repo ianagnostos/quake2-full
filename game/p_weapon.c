@@ -856,10 +856,22 @@ void Blaster_Fire (edict_t *ent, vec3_t g_offset, int damage, qboolean hyper, in
 	PlayerNoise(ent, start, PNOISE_WEAPON);
 }
 
+//yianni
+
+
+
+
+
+
+
+
+
 void Fishing_Hook(edict_t* ent)
 {
 	vec3_t forward, right, start, end, pull;
+	vec3_t  box_min, box_max, pull_vel;
 	trace_t t;
+	float pull_speed;
 
 	if (!ent)
 		return;
@@ -869,7 +881,10 @@ void Fishing_Hook(edict_t* ent)
 	VectorCopy(ent->s.origin, start);
 	start[2] += ent->viewheight;
 
-	VectorMA(start, 1000, forward, end);
+	VectorMA(start, 800, forward, end);
+
+	VectorSet(box_min, -8, -8, -8);
+	VectorSet(box_max, 8, 8, 8);
 
 	t = gi.trace(start, NULL, NULL, end, ent, MASK_SHOT);
 
@@ -894,12 +909,11 @@ void Fishing_Hook(edict_t* ent)
 //yianni
 void Jajaken_rock(edict_t* ent)
 {
-	vec3_t forward, right, start, end;
+	vec3_t forward, right, start, end, aim;
+	vec3_t  box_min, box_max, lunge_vel; 
 	trace_t t;
-	float charge;
-	int damage;
-	int kick;
-	int reach;
+	float charge, reach, lunge_speed;
+	int damage, kick;
 
 	if (!ent)
 		return;
@@ -923,24 +937,136 @@ void Jajaken_rock(edict_t* ent)
 	reach = MELEE_DISTANCE + (MELEE_DISTANCE * charge);
 	VectorMA(start, reach, forward, end);
 
-	t = gi.trace(start, NULL, NULL, end, ent, MASK_SHOT);
+	VectorSet(box_min, -16, -16, -16); 
+	VectorSet(box_max, 16, 16, 16); 
+
+	t = gi.trace(start, box_min, box_max, end, ent, MASK_SHOT);
 
 	if (t.fraction < 1.0 && t.ent && t.ent->takedamage && t.ent != ent)
 	{
-		T_Damage(t.ent, ent, ent, forward, t.endpos, vec3_origin, damage, kick, 0, MOD_HIT);
-		PlayerNoise(ent, start, PNOISE_WEAPON); 
+		ent->enemy = t.ent;
+		VectorSet(aim, reach, 0, 0);
+
+		if (fire_hit(ent, aim, damage, kick))
+		{
+			gi.sound(ent, CHAN_WEAPON, gi.soundindex("mutant/mutatck1.wav"), 1, ATTN_NORM, 0);
+			PlayerNoise(ent, start, PNOISE_WEAPON);
+		}
+		else
+		{
+			gi.sound(ent, CHAN_VOICE, gi.soundindex("weapons/noammo.wav"), 1, ATTN_NORM, 0);
+		}
+	}
+
+	lunge_speed = 300 + (charge * 200);
+	forward[2] = 0;
+	VectorNormalize(forward);
+	VectorScale(forward, lunge_speed, lunge_vel);
+
+	if (ent->groundentity)
+	{
+		ent->groundentity = NULL;
+		lunge_vel[2] = 150;
 	}
 	else
 	{
-		gi.sound(ent, CHAN_VOICE, gi.soundindex("weapons/noammo.wav"), 1, ATTN_NORM, 0); 
-		gi.sound(ent, CHAN_WEAPON, gi.soundindex("mutant/mutatck1.wav"), 1, ATTN_NORM, 0);
+		VectorScale(ent->velocity, 0.3f, ent->velocity);
+		lunge_vel[2] = ent->velocity[2];
 	}
 
-	forward[2] = 0;
-	VectorNormalize(forward);
-	
-	VectorMA(ent->velocity, (charge * 300), forward, ent->velocity);
+	VectorCopy(lunge_vel, ent->velocity);
+
 	ent->client->kick_angles[0] = -1;
+}
+
+
+
+
+
+
+
+
+void Thunderbolt(edict_t* ent)
+{
+	vec3_t forward, right, start, end;
+	vec3_t  box_min, box_max, dist;
+	trace_t t;
+	float distance;
+
+	if (!ent)
+		return;
+
+	if (level.time < ent->zap_buffer_time)
+		return;
+
+	ent->zap_buffer_time = level.time + 0.2f;
+
+	AngleVectors(ent->client->v_angle, forward, right, NULL);
+	VectorCopy(ent->s.origin, start);
+	start[2] += ent->viewheight;
+
+	VectorMA(start, 300, forward, end);
+
+	VectorSet(box_min, -32, -32, -32);
+	VectorSet(box_max, 32, 32, 32);
+
+	t = gi.trace(start, box_min, box_max, end, ent, MASK_SHOT);
+
+	if (t.fraction < 1.0 && t.ent && t.ent->takedamage && t.ent != ent)
+	{
+		T_Damage(t.ent, ent, ent, forward, t.endpos, vec3_origin, 2, 0, DAMAGE_ENERGY, MOD_HIT);
+		gi.sound(ent, CHAN_WEAPON, gi.soundindex("world/spark5.wav"), 1, ATTN_NORM, 0);
+		PlayerNoise(ent, start, PNOISE_WEAPON);
+
+	}
+	else
+	{
+		gi.sound(ent, CHAN_VOICE, gi.soundindex("weapons/noammo.wav"), 1, ATTN_NORM, 0);
+	}
+
+
+}
+
+void Lightning_Palm(edict_t* ent)
+{
+	vec3_t forward, right, start, end, aim;
+	vec3_t  box_min, box_max;
+	trace_t t;
+
+	if (!ent)
+		return;
+
+	AngleVectors(ent->client->v_angle, forward, right, NULL);
+	VectorCopy(ent->s.origin, start);
+	start[2] += ent->viewheight;
+
+	VectorMA(start, MELEE_DISTANCE, forward, end);
+
+	VectorSet(box_min, -8, -8, -8);
+	VectorSet(box_max, 8, 8, 8);
+
+	t = gi.trace(start, box_min, box_max, end, ent, MASK_SHOT);
+
+	if (t.fraction < 1.0 && t.ent && t.ent->takedamage && t.ent != ent)
+	{
+		ent->enemy = t.ent;
+		VectorSet(aim, MELEE_DISTANCE, 0, 0);
+
+		if (fire_hit(ent, aim, 150, 0))
+		{
+			
+
+			gi.sound(ent, CHAN_WEAPON, gi.soundindex("world/spark5.wav"), 1, ATTN_NORM, 0); 
+			ent->client->kick_angles[0] = -3;
+			PlayerNoise(ent, start, PNOISE_WEAPON);
+		}
+		ent->enemy = NULL;
+	}
+	else
+	{
+		gi.sound(ent, CHAN_VOICE, gi.soundindex("weapons/noammo.wav"), 1, ATTN_NORM, 0);
+	}
+	ent->palm_hold_time = 0;
 }
 
 
@@ -964,6 +1090,7 @@ void Weapon_Blaster(edict_t* ent)
 {
 	static int pause_frames[] = { 19, 32, 0 };
 	static int fire_frames[] = { 5, 0 };
+	float palm_held, charge;
 
 	if (!ent || !ent->client)
 		return;
@@ -999,10 +1126,69 @@ void Weapon_Blaster(edict_t* ent)
 		}
 		Weapon_Generic(ent, 4, 8, 52, 55, pause_frames, fire_frames, Weapon_Blaster_Fire);
 		break;
+	case 2:
+
+		if (ent->client->buttons & BUTTON_ATTACK)
+		{
+			ent->client->latched_buttons &= ~BUTTON_ATTACK;
+			Thunderbolt(ent);
+			ent->client->ps.gunframe = 4;
+			ent->client->weaponstate = WEAPON_READY;
+			break;
+		}
+
+		if (ent->client->buttons & BUTTON_ATTACK2)
+		{
+			if (ent->palm_hold_time == 0)
+				ent->palm_hold_time = level.time;
+
+			palm_held = level.time - ent->palm_hold_time;
+			charge = palm_held / 3.0f;
+
+			if (charge > 1.0f) charge = 1.0f;
+
+			ent->client->ps.gunframe = 4;
+			ent->client->weaponstate = WEAPON_READY;
+			ent->client->latched_buttons &= ~BUTTON_ATTACK;
+			return;
+		}
+		else if (ent->palm_hold_time > 0)
+		{
+			palm_held = level.time - ent->palm_hold_time;
+
+			if (palm_held >= 3.0f)
+				Lightning_Palm(ent);
+			else
+			{
+				gi.sound(ent, CHAN_VOICE, gi.soundindex("weapons/noammo.wav"), 1, ATTN_NORM, 0);
+				ent->palm_hold_time = 0;
+			}
+			ent->client->weaponstate = WEAPON_READY;
+		}
+		Weapon_Generic(ent, 4, 8, 52, 55, pause_frames, fire_frames, Weapon_Blaster_Fire);
+		break;
+
 	default:
 		Weapon_Generic(ent, 4, 8, 52, 55, pause_frames, fire_frames, Weapon_Blaster_Fire);
 	}
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 void Weapon_HyperBlaster_Fire (edict_t *ent)

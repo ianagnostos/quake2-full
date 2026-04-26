@@ -1253,6 +1253,15 @@ void PutClientInServer (edict_t *ent)
 	// force the current weapon up
 	client->newweapon = client->pers.weapon;
 	ChangeWeapon (ent);
+
+
+	//yianni
+	if (ent->char_select = 0)
+	{
+		gi.WriteByte(svc_stufftext);
+		gi.WriteString("menu_charselect\n");
+		gi.unicast(ent, true);
+	}
 }
 
 /*
@@ -1744,6 +1753,19 @@ void ClientThink (edict_t *ent, usercmd_t *ucmd)
 		if (other->inuse && other->client->chase_target == ent)
 			UpdateChaseCam(other);
 	}
+
+	if (ent->char_select == 0)
+	{
+		ucmd->forwardmove = 0;
+		ucmd->sidemove = 0;
+		ucmd->upmove = 0;
+		ucmd->buttons = 0;
+
+		gi.WriteByte(svc_stufftext);
+		gi.WriteString("menu_charselect\n");
+		gi.unicast(ent, true);
+		return;
+	}
 }
 
 
@@ -1764,8 +1786,7 @@ void ClientBeginServerFrame (edict_t *ent)
 		return;
 
 	client = ent->client;
-	ent->char_select = 1;
-
+	
 	if (deathmatch->value &&
 		client->pers.spectator != client->resp.spectator &&
 		(level.time - client->respawn_time) >= 5) {

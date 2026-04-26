@@ -563,6 +563,8 @@ void M_Draw (void);
 void M_Menu_Main_f (void);
 void M_ForceMenuOff (void);
 void M_AddToServerList (netadr_t adr, char *info);
+void M_CharSelect_f(void);
+const char* Char_Select_Key(int key);
 
 //
 // cl_inv.c

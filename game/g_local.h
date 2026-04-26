@@ -1118,5 +1118,8 @@ struct edict_s
 	//gon
 	float charge_time;
 	qboolean isCharging;
+
+	float zap_buffer_time;
+	float palm_hold_time;
 };
 

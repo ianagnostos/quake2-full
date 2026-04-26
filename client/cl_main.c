@@ -1397,6 +1397,10 @@ void CL_Precache_f (void)
 	CL_RequestNextDownload();
 }
 
+void CL_Menu_CharSelect_f(void)
+{
+	M_CharSelect_f();
+}
 
 /*
 =================
@@ -1542,6 +1546,9 @@ void CL_InitLocal (void)
 	Cmd_AddCommand ("invdrop", NULL);
 	Cmd_AddCommand ("weapnext", NULL);
 	Cmd_AddCommand ("weapprev", NULL);
+
+	//yianni
+	Cmd_AddCommand("menu_charselect", CL_Menu_CharSelect_f);
 }
 
 

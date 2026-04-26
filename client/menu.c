@@ -51,6 +51,8 @@ void M_Menu_Main_f (void);
 
 	void M_Menu_Credits( void );
 
+	void M_CharSelect_f(void);
+
 qboolean	m_entersound;		// play after drawing a frame, so caching
 								// won't disrupt the sound
 
@@ -3937,6 +3939,85 @@ void M_Menu_Quit_f (void)
 
 
 
+//yianni
+
+
+
+
+
+static int		charselect_cursor;
+
+static const char* char_names[] = {
+	"1. GON",
+	"2. KILLUA",
+	"3. KURAPIKA",
+	"4. HISOKA",
+	"5. GENTHRU"
+};
+
+void Char_SelectDraw(void)
+{
+	int i;
+	int y = viddef.height / 2 - 80;
+	int x = viddef.width / 2 - 100;
+
+	M_Print(x, y, "CHARACTER SELECT");
+	y += 40;
+
+	for (i = 0; i < 5; i++)
+	{
+		if (i == charselect_cursor)
+			M_Print(x, y, va("-> %s", char_names[i]));
+		else
+			M_Print(x, y, va(" %s", char_names[i]));
+		y += 10;
+	}
+
+	y += 10;
+	M_Print(x, y, "ENTER to confirm");
+}
+
+const char* Char_Select_Key(int key)
+{
+	switch (key)
+	{
+	case K_UPARROW:
+		charselect_cursor--;
+		if (charselect_cursor < 0)
+			charselect_cursor = 4;
+		return menu_move_sound;
+
+
+	case K_DOWNARROW:
+		charselect_cursor++;
+		if (charselect_cursor >= 5)
+			charselect_cursor = 0;
+		return menu_move_sound;
+
+	case K_ENTER:
+		Cbuf_AddText(va("char_select %d\n", charselect_cursor + 1));
+		M_ForceMenuOff();
+		return menu_move_sound;
+
+	case K_ESCAPE:
+		return menu_move_sound;
+	}
+
+	return NULL;
+}
+
+void M_CharSelect_f(void)
+{
+	charselect_cursor = 0;
+	M_PushMenu(Char_SelectDraw, Char_Select_Key);
+}
+
+
+
+
+
+
+
 //=============================================================================
 /* Menu Subsystem */
 
@@ -3964,6 +4045,7 @@ void M_Init (void)
 	Cmd_AddCommand ("menu_options", M_Menu_Options_f);
 		Cmd_AddCommand ("menu_keys", M_Menu_Keys_f);
 	Cmd_AddCommand ("menu_quit", M_Menu_Quit_f);
+	Cmd_AddCommand("menu_charselect", M_CharSelect_f);
 }
 
 
@@ -4012,5 +4094,3 @@ void M_Keydown (int key)
 		if ( ( s = m_keyfunc( key ) ) != 0 )
 			S_StartLocalSound( ( char * ) s );
 }
-
-

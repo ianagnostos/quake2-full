@@ -1,3 +1,1 @@
-﻿  cl_input.c
-C:\Users\ianag\git\quake2-full\client\cl_input.c(489,1): warning C4700: uninitialized local variable 'buf' used
-  quake2.vcxproj -> C:\Users\ianag\git\quake2-full\release\quake2.exe
+﻿  quake2.vcxproj -> C:\Users\ianag\git\quake2-full\release\quake2.exe
