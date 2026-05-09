@@ -343,6 +343,32 @@ void ExitLevel (void)
 
 }
 
+void Countdown_Explode(edict_t* ent)
+{
+	if (!ent->inuse) return;
+
+	gi.WriteByte(svc_temp_entity);
+	gi.WriteByte(TE_EXPLOSION1);
+	gi.WritePosition(ent->s.origin);
+	gi.multicast(ent->s.origin, MULTICAST_PVS);
+	gi.sound(ent, CHAN_BODY, gi.soundindex("weapons/rocklx1a.wav"), 1, ATTN_NORM, 0);
+
+	// Direct hit on the bombed entity
+	if (ent->bomb_owner && ent->bomb_owner->inuse)
+		T_Damage(ent, ent->bomb_owner, ent->bomb_owner,
+			vec3_origin, ent->s.origin, vec3_origin,
+			150, 100, DAMAGE_NO_KNOCKBACK, MOD_HIT);
+
+	// AOE using engine radius damage — ignore Genthru
+	T_RadiusDamage(ent, ent->bomb_owner, 75, ent->bomb_owner, 200, MOD_HIT);
+
+	if (ent->bomb_owner && ent->bomb_owner->inuse)
+		ent->bomb_owner->bomb_used = false;
+
+	ent->has_bomb = false;
+	ent->bomb_owner = NULL;
+}
+
 /*
 ================
 G_RunFrame
@@ -377,7 +403,16 @@ void G_RunFrame (void)
 	for (i=0 ; i<globals.num_edicts ; i++, ent++)
 	{
 		if (!ent->inuse)
+		{
+			if (ent->has_bomb)
+			{
+				if (ent->bomb_owner && ent->bomb_owner->inuse)
+					ent->bomb_owner->bomb_used = false;
+				ent->has_bomb = false;
+				ent->bomb_owner = NULL;
+			}
 			continue;
+		}
 
 		level.current_entity = ent;
 
@@ -391,6 +426,17 @@ void G_RunFrame (void)
 			{
 				M_CheckGround (ent);
 			}
+		}
+
+		if (ent->has_bomb)
+		{
+			if (!ent->bomb_owner || !ent->bomb_owner->inuse)
+			{
+				ent->has_bomb = false;
+				ent->bomb_owner = NULL;
+			}
+			else if (level.time >= ent->countdown_endtime)
+				Countdown_Explode(ent);
 		}
 
 		if (i > 0 && i <= maxclients->value)

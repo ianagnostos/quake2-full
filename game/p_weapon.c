@@ -809,7 +809,7 @@ void Weapon_RocketLauncher (edict_t *ent)
 /*
 ======================================================================
 
-BLASTER / HYPERBLASTER
+BLASTER / HUNTER x HUNTER
 
 ======================================================================
 */
@@ -858,13 +858,21 @@ void Blaster_Fire (edict_t *ent, vec3_t g_offset, int damage, qboolean hyper, in
 
 //yianni
 
+void Weapon_Blaster_Fire(edict_t* ent)
+{
+	int damage;
 
+	if (!ent || !ent->client)
+		return;
 
+	if (deathmatch->value)
+		damage = 15;
+	else
+		damage = 10;
 
-
-
-
-
+	Blaster_Fire(ent, vec3_origin, damage, false, EF_BLASTER);
+	ent->client->ps.gunframe++;
+} 
 
 void Fishing_Hook(edict_t* ent)
 {
@@ -903,6 +911,11 @@ void Fishing_Hook(edict_t* ent)
 		gi.sound(ent, CHAN_WEAPON, gi.soundindex("mutant/mutatck1.wav"), 1, ATTN_NORM, 0);
 	}
 
+	gi.WriteByte(svc_temp_entity);
+	gi.WriteByte(TE_BFG_LASER);
+	gi.WritePosition(ent->s.origin);
+	gi.WritePosition(t.endpos);
+	gi.multicast(ent->s.origin, MULTICAST_PHS);
 	ent->client->kick_angles[0] = -1;
 }
 
@@ -910,7 +923,7 @@ void Fishing_Hook(edict_t* ent)
 void Jajaken_rock(edict_t* ent)
 {
 	vec3_t forward, right, start, end, aim;
-	vec3_t  box_min, box_max, lunge_vel; 
+	vec3_t  box_min, box_max, lunge_vel;
 	trace_t t;
 	float charge, reach, lunge_speed;
 	int damage, kick;
@@ -937,25 +950,21 @@ void Jajaken_rock(edict_t* ent)
 	reach = MELEE_DISTANCE + (MELEE_DISTANCE * charge);
 	VectorMA(start, reach, forward, end);
 
-	VectorSet(box_min, -16, -16, -16); 
-	VectorSet(box_max, 16, 16, 16); 
+	VectorSet(box_min, -16, -16, -16);
+	VectorSet(box_max, 16, 16, 16);
 
 	t = gi.trace(start, box_min, box_max, end, ent, MASK_SHOT);
 
-	if (t.fraction < 1.0 && t.ent && t.ent->takedamage && t.ent != ent)
+	if (t.ent && t.ent->takedamage && t.ent != ent)
 	{
-		ent->enemy = t.ent;
-		VectorSet(aim, reach, 0, 0);
+		T_Damage(t.ent, ent, ent, forward, t.endpos, vec3_origin, damage, kick, DAMAGE_NO_KNOCKBACK, MOD_HIT);		
+		gi.WriteByte(svc_temp_entity);
+		gi.WriteByte(TE_EXPLOSION1);
+		gi.WritePosition(t.ent->s.origin);
+		gi.multicast(t.ent->s.origin, MULTICAST_PVS);
 
-		if (fire_hit(ent, aim, damage, kick))
-		{
-			gi.sound(ent, CHAN_WEAPON, gi.soundindex("mutant/mutatck1.wav"), 1, ATTN_NORM, 0);
-			PlayerNoise(ent, start, PNOISE_WEAPON);
-		}
-		else
-		{
-			gi.sound(ent, CHAN_VOICE, gi.soundindex("weapons/noammo.wav"), 1, ATTN_NORM, 0);
-		}
+		gi.sound(ent, CHAN_WEAPON, gi.soundindex("mutant/mutatck1.wav"), 1, ATTN_NORM, 0);
+		PlayerNoise(ent, start, PNOISE_WEAPON);
 	}
 
 	lunge_speed = 300 + (charge * 200);
@@ -980,16 +989,53 @@ void Jajaken_rock(edict_t* ent)
 }
 
 
+void Character_Gon(edict_t* ent, int* pause_frames, int* fire_frames)
+{
+	if (ent->client->buttons & BUTTON_ATTACK2)
+	{
+		Fishing_Hook(ent);
+		ent->isCharging = false;
+		ent->client->ps.gunframe = 4;
+		ent->client->weaponstate = WEAPON_READY;
+		return;
+	}
 
+	if (ent->client->buttons &  BUTTON_ATTACK)
+	{
+		if (!ent->isCharging)
+		{
+			ent->isCharging = true;
+			ent->charge_time = level.time;
+		}
 
+		ent->client->ps.gunframe = 4;
+		ent->client->weaponstate = WEAPON_READY;
+		return;
+	}
+	else if (ent->isCharging)
+	{
+		Jajaken_rock(ent);
+		ent->isCharging = false;
+		ent->client->ps.gunframe = 4;
+		ent->client->weaponstate = WEAPON_READY;
+		return;
 
+	}
 
+	if (!(ent->client->buttons & BUTTON_ATTACK))
+		Weapon_Generic(ent, 4, 8, 52, 55, pause_frames, fire_frames, Weapon_Blaster_Fire);
+	else
+	{
+		ent->client->ps.gunframe = 4;
+		ent->client->weaponstate = WEAPON_READY;
+	}
+}
 
 
 void Thunderbolt(edict_t* ent)
 {
 	vec3_t forward, right, start, end;
-	vec3_t  box_min, box_max, dist;
+	vec3_t  box_min, box_max, dist, dir;
 	trace_t t;
 	float distance;
 
@@ -1002,19 +1048,26 @@ void Thunderbolt(edict_t* ent)
 	ent->zap_buffer_time = level.time + 0.2f;
 
 	AngleVectors(ent->client->v_angle, forward, right, NULL);
+	VectorNormalize(forward);
 	VectorCopy(ent->s.origin, start);
 	start[2] += ent->viewheight;
 
 	VectorMA(start, 300, forward, end);
 
-	VectorSet(box_min, -32, -32, -32);
-	VectorSet(box_max, 32, 32, 32);
+	VectorSet(box_min, -16, -16, -16);
+	VectorSet(box_max, 16, 16, 16);
 
 	t = gi.trace(start, box_min, box_max, end, ent, MASK_SHOT);
 
 	if (t.fraction < 1.0 && t.ent && t.ent->takedamage && t.ent != ent)
 	{
 		T_Damage(t.ent, ent, ent, forward, t.endpos, vec3_origin, 2, 0, DAMAGE_ENERGY, MOD_HIT);
+		gi.WriteByte(svc_temp_entity);
+		gi.WriteByte(TE_LASER_SPARKS);
+		gi.WriteByte(25);
+		gi.WritePosition(t.ent->s.origin);
+		gi.WriteDir(forward);
+		gi.WriteByte(TE_LASER_SPARKS);
 		gi.sound(ent, CHAN_WEAPON, gi.soundindex("world/spark5.wav"), 1, ATTN_NORM, 0);
 		PlayerNoise(ent, start, PNOISE_WEAPON);
 
@@ -1027,9 +1080,32 @@ void Thunderbolt(edict_t* ent)
 
 }
 
+qboolean InPalmRange(edict_t* ent)
+{
+	vec3_t forward, right, start, end;
+	vec3_t  box_min, box_max;
+	trace_t t;
+
+	if (!ent)
+		return false;
+
+	AngleVectors(ent->client->v_angle, forward, right, NULL);
+	VectorCopy(ent->s.origin, start);
+	start[2] += ent->viewheight;
+
+	VectorMA(start, MELEE_DISTANCE, forward, end);
+
+	VectorSet(box_min, -8, -8, -8);
+	VectorSet(box_max, 8, 8, 8);
+
+	t = gi.trace(start, box_min, box_max, end, ent, MASK_SHOT);
+
+	return (t.ent && t.ent->takedamage && t.ent != ent);
+}
+
 void Lightning_Palm(edict_t* ent)
 {
-	vec3_t forward, right, start, end, aim;
+	vec3_t forward, right, start, end;
 	vec3_t  box_min, box_max;
 	trace_t t;
 
@@ -1047,130 +1123,410 @@ void Lightning_Palm(edict_t* ent)
 
 	t = gi.trace(start, box_min, box_max, end, ent, MASK_SHOT);
 
-	if (t.fraction < 1.0 && t.ent && t.ent->takedamage && t.ent != ent)
+	gi.dprintf("Lightning_Palm: fraction=%.2f, ent=%s, takedamage=%d\n",
+		t.fraction,
+		t.ent ? t.ent->classname : "NULL",
+		t.ent ? t.ent->takedamage : -1);
+
+	if (t.ent && t.ent->takedamage && t.ent != ent)
 	{
-		ent->enemy = t.ent;
-		VectorSet(aim, MELEE_DISTANCE, 0, 0);
-
-		if (fire_hit(ent, aim, 150, 0))
-		{
-			
-
-			gi.sound(ent, CHAN_WEAPON, gi.soundindex("world/spark5.wav"), 1, ATTN_NORM, 0); 
-			ent->client->kick_angles[0] = -3;
-			PlayerNoise(ent, start, PNOISE_WEAPON);
-		}
-		ent->enemy = NULL;
+		T_Damage(t.ent, ent, ent, forward, t.endpos, vec3_origin, 250, 600, DAMAGE_NO_KNOCKBACK, MOD_UNKNOWN);
+		gi.sound(ent, CHAN_WEAPON, gi.soundindex("world/spark5.wav"), 1, ATTN_NORM, 0);
+		ent->client->kick_angles[0] = -6;
+		PlayerNoise(ent, start, PNOISE_WEAPON);
 	}
 	else
 	{
+		gi.dprintf("Lightning_Palm: trace missed or invalid target\n");
 		gi.sound(ent, CHAN_VOICE, gi.soundindex("weapons/noammo.wav"), 1, ATTN_NORM, 0);
 	}
 	ent->palm_hold_time = 0;
 }
 
 
-void Weapon_Blaster_Fire(edict_t* ent)
+void Character_Killua(edict_t* ent, int* pause_frames, int* fire_frames)
 {
-	int damage;
+	float palm_held;
 
-	if (!ent || !ent->client)
-		return;
-
-	if (deathmatch->value)
-		damage = 15;
-	else
-		damage = 10;
-
-	Blaster_Fire(ent, vec3_origin, damage, false, EF_BLASTER);
-	ent->client->ps.gunframe++;
-} 
-
-void Weapon_Blaster(edict_t* ent)
-{
-	static int pause_frames[] = { 19, 32, 0 };
-	static int fire_frames[] = { 5, 0 };
-	float palm_held, charge;
-
-	if (!ent || !ent->client)
-		return;
-
-	switch (ent->char_select) {
-	case 1:
-
-		if (ent->client->buttons & BUTTON_ATTACK2)
+	if (ent->client->buttons & BUTTON_ATTACK2)
+	{
+		if (InPalmRange(ent))
 		{
-			ent->isCharging = false;
-			Fishing_Hook(ent);
-			break;
-		}
-
-		if (ent->client->buttons & BUTTON_ATTACK)
-		{
-			if (!ent->isCharging)
-			{
-				ent->isCharging = true;
-				ent->charge_time = level.time;
-			}
-
-			ent->client->ps.gunframe = 4;
-			ent->client->weaponstate = WEAPON_READY;
-			break;
-		}
-		else if (ent->isCharging)
-		{
-			Jajaken_rock(ent);
-			ent->isCharging = false;
-			ent->client->weaponstate = WEAPON_READY;
-			break;
-		}
-		Weapon_Generic(ent, 4, 8, 52, 55, pause_frames, fire_frames, Weapon_Blaster_Fire);
-		break;
-	case 2:
-
-		if (ent->client->buttons & BUTTON_ATTACK)
-		{
-			ent->client->latched_buttons &= ~BUTTON_ATTACK;
-			Thunderbolt(ent);
-			ent->client->ps.gunframe = 4;
-			ent->client->weaponstate = WEAPON_READY;
-			break;
-		}
-
-		if (ent->client->buttons & BUTTON_ATTACK2)
-		{
-			if (ent->palm_hold_time == 0)
+			if(ent->palm_hold_time == 0)
 				ent->palm_hold_time = level.time;
-
-			palm_held = level.time - ent->palm_hold_time;
-			charge = palm_held / 3.0f;
-
-			if (charge > 1.0f) charge = 1.0f;
 
 			ent->client->ps.gunframe = 4;
 			ent->client->weaponstate = WEAPON_READY;
 			ent->client->latched_buttons &= ~BUTTON_ATTACK;
 			return;
 		}
-		else if (ent->palm_hold_time > 0)
+		else
 		{
-			palm_held = level.time - ent->palm_hold_time;
-
-			if (palm_held >= 3.0f)
-				Lightning_Palm(ent);
-			else
+			if (ent->palm_hold_time > 0)
 			{
 				gi.sound(ent, CHAN_VOICE, gi.soundindex("weapons/noammo.wav"), 1, ATTN_NORM, 0);
 				ent->palm_hold_time = 0;
-			}
-			ent->client->weaponstate = WEAPON_READY;
-		}
-		Weapon_Generic(ent, 4, 8, 52, 55, pause_frames, fire_frames, Weapon_Blaster_Fire);
-		break;
 
-	default:
-		Weapon_Generic(ent, 4, 8, 52, 55, pause_frames, fire_frames, Weapon_Blaster_Fire);
+			}
+			ent->client->ps.gunframe = 4;
+			ent->client->weaponstate = WEAPON_READY;
+			return;
+		}
 	}
+	else if (ent->palm_hold_time > 0)
+	{
+		palm_held = level.time - ent->palm_hold_time;
+
+		ent->palm_hold_time = 0;
+
+		if (palm_held >= 1.5f)
+		{
+			gi.dprintf("FIRING Lightning_Palm\n");
+			Lightning_Palm(ent);
+		}
+		else
+		{
+			gi.dprintf("NOT charged enough\n");
+			gi.sound(ent, CHAN_VOICE, gi.soundindex("weapons/noammo.wav"), 1, ATTN_NORM, 0);
+		}
+
+		ent->client->weaponstate = WEAPON_READY;
+		return;
+	}
+
+	if (ent->client->buttons & BUTTON_ATTACK)
+	{
+		ent->client->latched_buttons &= ~BUTTON_ATTACK;
+		Thunderbolt(ent);
+		ent->client->ps.gunframe = 4;
+		ent->client->weaponstate = WEAPON_READY;
+		return;
+	}
+
+	if (!(ent->client->buttons & BUTTON_ATTACK)) 
+		Weapon_Generic(ent, 4, 8, 52, 55, pause_frames, fire_frames, Weapon_Blaster_Fire); 
+	else 
+	{  
+		ent->client->ps.gunframe = 4; 
+		ent->client->weaponstate = WEAPON_READY; 
+	} 
+}
+
+void Card_throw(edict_t* ent)
+{
+	vec3_t forward, right, start, offset;
+
+	if (!ent || !ent->client)
+		return;
+
+	AngleVectors(ent->client->v_angle, forward, right, NULL);
+	VectorSet(offset, 0, 0, ent->viewheight - 8);
+	P_ProjectSource(ent->client, ent->s.origin, offset, forward, right, start);
+
+	fire_card(ent, start, forward, 5); 
+
+	return;
+}
+
+void Card_homing(edict_t* ent)
+{
+	vec3_t forward, start, end;
+	trace_t t;
+
+	AngleVectors(ent->client->v_angle, forward, NULL, NULL);
+
+	VectorCopy(ent->s.origin, start);
+	start[2] += ent->viewheight;
+
+	VectorMA(start, 8192, forward, end);
+
+	t = gi.trace(start, NULL, NULL, end, ent, MASK_SHOT);
+
+	if (t.ent && t.ent->takedamage)
+	{
+		ent->homing = t.ent;
+		//sound and or effects
+	}
+	else
+	{
+		ent->homing = NULL;
+	}
+}
+
+void Character_Hisoka(edict_t* ent, int* pause_frames, int* fire_frames)
+{
+	if (ent->client->latched_buttons & BUTTON_ATTACK2)
+	{
+		ent->client->latched_buttons &= ~BUTTON_ATTACK2;
+		Card_homing(ent);
+		ent->client->ps.gunframe = 4;
+		ent->client->weaponstate = WEAPON_READY;
+		return;
+	}
+
+
+	if ((ent->client->latched_buttons & BUTTON_ATTACK) && level.time >= ent->next_burst)
+	{
+		ent->client->latched_buttons &= ~BUTTON_ATTACK; 
+		ent->burst_fire = true;
+		ent->burst_count = 0;
+	}
+
+	if (ent->burst_fire)
+	{
+		if (level.time >= ent->next_burst)
+		{
+			Card_throw(ent);
+			ent->burst_count++;
+			ent->next_burst = level.time + 0.2f;
+			ent->client->ps.gunframe = 4;
+			ent->client->weaponstate = WEAPON_READY;
+
+			if (ent->burst_count >= 3)
+			{
+				ent->burst_fire = false;
+				ent->burst_count = 0;
+				ent->next_burst = level.time + 0.5f;
+			}
+
+		}
+		return;
+	}
+
+	if(!(ent->client->buttons & BUTTON_ATTACK))
+		Weapon_Generic(ent, 4, 8, 52, 55, pause_frames, fire_frames, Weapon_Blaster_Fire);
+	else
+	{
+		ent->client->ps.gunframe = 4;
+		ent->client->weaponstate = WEAPON_READY;
+	}
+}
+
+void Chain_strike(edict_t* ent)
+{
+	vec3_t forward, right, start, offset;
+
+	AngleVectors(ent->client->v_angle, forward, right, NULL);
+
+	VectorSet(offset, 24, 8, ent->viewheight - 8);
+	P_ProjectSource(ent->client, ent->s.origin, offset, forward, right, start);
+
+	fire_chain(ent, start, forward, 1, 1400, 600);
+	ent->chain_out = true;
+	PlayerNoise(ent, start, PNOISE_WEAPON);
+}
+
+void Chain_jail(edict_t* ent)
+{
+	vec3_t forward, right, start, offset;
+
+	AngleVectors(ent->client->v_angle, forward, right, NULL);
+
+	VectorSet(offset, 24, 8, ent->viewheight - 8);
+	P_ProjectSource(ent->client, ent->s.origin, offset, forward, right, start);
+
+	fire_chainjail(ent, start, forward, 1200);
+	PlayerNoise(ent, start, PNOISE_WEAPON);
+}
+
+void Character_Kurapika(edict_t* ent, int* pause_frames, int* fire_frames)
+{
+
+	if (ent->client->latched_buttons & BUTTON_ATTACK2)
+	{
+		ent->client->latched_buttons &= ~BUTTON_ATTACK2;
+		Chain_jail(ent);
+		ent->client->ps.gunframe = 4;
+		ent->client->weaponstate = WEAPON_READY;
+		return;
+	}
+
+
+	if ((ent->client->latched_buttons & BUTTON_ATTACK) && !ent->chain_out)
+	{
+		ent->client->latched_buttons &= ~BUTTON_ATTACK;
+		Chain_strike(ent);
+		ent->client->ps.gunframe = 4;
+		ent->client->weaponstate = WEAPON_READY;
+		return;
+	}
+
+	if (!(ent->client->buttons & BUTTON_ATTACK))
+		Weapon_Generic(ent, 4, 8, 52, 55, pause_frames, fire_frames, Weapon_Blaster_Fire);
+	else
+	{
+		ent->client->ps.gunframe = 4;
+		ent->client->weaponstate = WEAPON_READY;
+	}
+}
+
+void Little_flower(edict_t* ent)
+{
+	vec3_t dir, back;
+
+	T_RadiusDamage(ent, ent, 40, ent, 150, MOD_HIT);
+
+	AngleVectors(ent->client->v_angle, back, NULL, NULL);
+	VectorScale(back, -600, back);
+	back[2] = 300;
+	VectorAdd(ent->velocity, back, ent->velocity);
+
+	gi.WriteByte(svc_temp_entity);
+	gi.WriteByte(TE_EXPLOSION1);
+	gi.WritePosition(ent->s.origin);
+	gi.multicast(ent->s.origin, MULTICAST_PVS);
+
+	ent->client->kick_angles[0] = -4;
+	gi.sound(ent, CHAN_VOICE, gi.soundindex("weapons/rocklx1a.wav"), 1, ATTN_NORM, 0);
+	PlayerNoise(ent, ent->s.origin, PNOISE_WEAPON);
+
+}
+
+void Countdown(edict_t* ent)
+{
+	vec3_t forward, right, start, end;
+	vec3_t  box_min, box_max;
+	trace_t t;
+
+	if (ent->bomb_used)
+	{
+		gi.sound(ent, CHAN_VOICE, gi.soundindex("weapons/noammo.wav"), 1, ATTN_NORM, 0);
+		return;
+	}
+
+	AngleVectors(ent->client->v_angle, forward, NULL, NULL);
+	VectorCopy(ent->s.origin, start);
+	start[2] += ent->viewheight;
+	VectorMA(start, MELEE_DISTANCE, forward, end);
+
+	VectorSet(box_min, -8, -8, -8);
+	VectorSet(box_max, 8, 8, 8);
+
+	t = gi.trace(start, box_min, box_max, end, ent, MASK_SHOT);
+
+	if (t.ent && t.ent->takedamage && t.ent != ent)
+	{
+		t.ent->has_bomb = true;
+		t.ent->countdown_endtime = level.time + 5.0f; 
+		t.ent->bomb_owner = ent;
+
+		ent->bomb_used = true;
+
+		gi.sound(ent, CHAN_WEAPON, gi.soundindex("weapons/hgrenb1a.wav"), 1, ATTN_NORM, 0);
+		gi.cprintf(ent, PRINT_HIGH, "Countdown!\n");
+		PlayerNoise(ent, start, PNOISE_WEAPON);
+	}
+	else
+	{
+		gi.sound(ent, CHAN_VOICE, gi.soundindex("weapons/noammo.wav"), 1, ATTN_NORM, 0);
+	}
+}
+
+void Detonator(edict_t* ent) 
+{
+	vec3_t forward, right, start, end;
+	vec3_t  box_min, box_max;
+	trace_t t;
+
+	if (ent->bomb_used)
+	{
+		gi.sound(ent, CHAN_VOICE, gi.soundindex("weapons/noammo.wav"), 1, ATTN_NORM, 0);
+		return;
+	}
+
+	AngleVectors(ent->client->v_angle, forward, NULL, NULL);
+	VectorCopy(ent->s.origin, start);
+	start[2] += ent->viewheight;
+	VectorMA(start, MELEE_DISTANCE, forward, end);
+
+	VectorSet(box_min, -8, -8, -8);
+	VectorSet(box_max, 8, 8, 8);
+
+	t = gi.trace(start, box_min, box_max, end, ent, MASK_SHOT);
+
+	if (t.ent && t.ent->takedamage && t.ent != ent)
+	{
+		if (t.ent->has_bomb)
+		{
+			t.ent->countdown_endtime = t.ent->countdown_endtime - 5.0f;
+			t.ent->detonator_buffer = level.time + 2.0f;
+
+		}
+
+		PlayerNoise(ent, start, PNOISE_WEAPON);
+	}
+	else
+	{
+		gi.sound(ent, CHAN_VOICE, gi.soundindex("weapons/noammo.wav"), 1, ATTN_NORM, 0);
+	}
+}
+
+Character_Genthru(edict_t* ent, int*  pause_frames, int* fire_frames)
+{
+	if (ent->client->latched_buttons & BUTTON_ATTACK2)
+	{
+		ent->client->latched_buttons &= ~BUTTON_ATTACK2;
+		if (level.time >= ent->next_burst)
+		{ 
+			Little_flower(ent); 
+			ent->next_burst = level.time + 2.0f;
+		}
+		else
+		{
+			gi.sound(ent, CHAN_VOICE, gi.soundindex("weapons/noammo.wav"), 1, ATTN_NORM, 0);
+		}
+		ent->client->ps.gunframe = 4;
+		ent->client->weaponstate = WEAPON_READY;
+		return;
+	}
+
+	if ((ent->client->latched_buttons & BUTTON_ABILITY) && !ent->bomb_used)
+	{
+		ent->client->latched_buttons &= ~BUTTON_ABILITY;
+		Countdown(ent);
+		ent->client->ps.gunframe = 4;
+		ent->client->weaponstate = WEAPON_READY;
+		return;
+	}
+
+	if ((ent->client->latched_buttons & BUTTON_ATTACK) && level.time >= ent->detonator_buffer )
+	{
+
+		ent->client->latched_buttons &= ~BUTTON_ABILITY;
+		Detonator(ent);
+		ent->client->ps.gunframe = 4;
+		ent->client->weaponstate = WEAPON_READY;
+		return;
+	}
+
+	if (!(ent->client->buttons & BUTTON_ATTACK))
+		Weapon_Generic(ent, 4, 8, 52, 55, pause_frames, fire_frames, Weapon_Blaster_Fire);
+	else
+	{
+		ent->client->ps.gunframe = 4;
+		ent->client->weaponstate = WEAPON_READY;
+	}
+}
+
+
+void Weapon_Blaster(edict_t* ent)
+{
+	static int pause_frames[] = { 19, 32, 0 };
+	static int fire_frames[] = { 5, 0 };
+
+	if (!ent || !ent->client)
+		return;
+
+	switch (ent->char_select)
+	{
+		case 1: Character_Gon(ent, pause_frames, fire_frames); break;
+		case 2: Character_Killua(ent, pause_frames, fire_frames); break;
+		case 3: Character_Kurapika(ent, pause_frames, fire_frames); break;
+		case 4: Character_Hisoka(ent, pause_frames, fire_frames); break;
+		case 5: Character_Genthru(ent, pause_frames, fire_frames); break;
+		default:Weapon_Generic(ent, 4, 8, 52, 55, pause_frames, fire_frames, Weapon_Blaster_Fire); break;
+	}
+
 }
 
 

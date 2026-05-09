@@ -57,7 +57,7 @@ Key_Event (int key, qboolean down, unsigned time);
 kbutton_t	in_klook;
 kbutton_t	in_left, in_right, in_forward, in_back;
 kbutton_t	in_lookup, in_lookdown, in_moveleft, in_moveright;
-kbutton_t	in_strafe, in_speed, in_use, in_attack, in_attack2;
+kbutton_t	in_strafe, in_speed, in_use, in_attack, in_attack2, in_ability, in_ability2;
 kbutton_t	in_up, in_down;
 
 int			in_impulse;
@@ -172,6 +172,12 @@ void IN_AttackUp(void) {KeyUp(&in_attack);}
 
 void IN_Attack2Down(void) { KeyDown(&in_attack2); }
 void IN_Attack2Up(void) { KeyUp(&in_attack2); }
+
+void IN_AbilityDown(void) { KeyDown(&in_ability); }
+void IN_AbilityUp(void) { KeyUp(&in_ability); }
+
+void IN_Ability2Down(void) { KeyDown(&in_ability2); }
+void IN_Ability2Up(void) { KeyUp(&in_ability2); }
 
 void IN_UseDown (void) {KeyDown(&in_use);}
 void IN_UseUp (void) {KeyUp(&in_use);}
@@ -353,6 +359,20 @@ void CL_FinishMove (usercmd_t *cmd)
 	}
 	in_attack2.state &= ~2;
 
+	if (in_ability.state & 3)
+	{
+		cmd->buttons |= BUTTON_ABILITY;
+		Com_Printf("ability fired\n");
+	}
+	in_ability.state &= ~2;
+
+	if (in_ability2.state & 3)
+	{
+		cmd->buttons |= BUTTON_ABILITY2;
+		Com_Printf("ability2 fired\n");
+	}
+	in_ability2.state &= ~2;
+
 	if (anykeydown && cls.key_dest == key_game)
 		cmd->buttons |= BUTTON_ANY;
 
@@ -451,6 +471,10 @@ void CL_InitInput (void)
 	Cmd_AddCommand ("-klook", IN_KLookUp);
 	Cmd_AddCommand("+attack2", IN_Attack2Down);
 	Cmd_AddCommand("-attack2", IN_Attack2Up);
+	Cmd_AddCommand("+ability", IN_AbilityDown);
+	Cmd_AddCommand("-ability", IN_AbilityUp);
+	Cmd_AddCommand("+abilty2", IN_Ability2Down);
+	Cmd_AddCommand("-ability2", IN_Ability2Up);
 
 	cl_nodelta = Cvar_Get ("cl_nodelta", "0", 0);
 }

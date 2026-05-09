@@ -1725,12 +1725,14 @@ void ClientThink (edict_t *ent, usercmd_t *ucmd)
 			if (client->chase_target) {
 				client->chase_target = NULL;
 				client->ps.pmove.pm_flags &= ~PMF_NO_PREDICTION;
-			} else
+			}
+			else
 				GetChaseTarget(ent);
 
-		} else if (!client->weapon_thunk) {
+		}
+		else if (!client->weapon_thunk) { 
 			client->weapon_thunk = true;
-			Think_Weapon (ent);
+			Think_Weapon(ent);
 		}
 	}
 

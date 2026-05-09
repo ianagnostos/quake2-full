@@ -733,6 +733,9 @@ void fire_grenade2 (edict_t *self, vec3_t start, vec3_t aimdir, int damage, int 
 void fire_rocket (edict_t *self, vec3_t start, vec3_t dir, int damage, int speed, float damage_radius, int radius_damage, int bounce);
 void fire_rail (edict_t *self, vec3_t start, vec3_t aimdir, int damage, int kick);
 void fire_bfg (edict_t *self, vec3_t start, vec3_t dir, int damage, int speed, float damage_radius);
+void fire_card(edict_t* ent, vec3_t start, vec3_t dir, int damage);
+void fire_chain(edict_t* self, vec3_t start, vec3_t dir, int damage, float speed, float maxrange);
+void fire_chainjail(edict_t* self, vec3_t start, vec3_t dir, float speed);
 
 //
 // g_ptrail.c
@@ -1119,7 +1122,28 @@ struct edict_s
 	float charge_time;
 	qboolean isCharging;
 
+	//killua
 	float zap_buffer_time;
 	float palm_hold_time;
+
+	//hiskoa
+	edict_t* homing;
+	qboolean burst_fire;
+	float next_burst;
+	int burst_count; 
+
+	//kurapika
+	qboolean returning, chain_out;
+	vec3_t return_dir;
+	float range, pierce_buffer_time, chain_released;
+
+	qboolean    chain_struck;      
+	qboolean    chained;
+	float       chain_jail_endtime;
+
+	//genthru
+	qboolean has_bomb, bomb_used;
+	float countdown_endtime, detonator_buffer;
+	edict_t* bomb_owner;
 };
 

@@ -1157,11 +1157,11 @@ void CL_ParseTEnt (void)
 
 	case TE_ELECTRIC_SPARKS:
 		MSG_ReadPos (&net_message, pos);
-		MSG_ReadDir (&net_message, dir);
+		dir[0] = 1; dir[1] = 1; dir[2] = 1;
 //		CL_ParticleEffect (pos, dir, 109, 40);
 		CL_ParticleEffect (pos, dir, 0x75, 40);
 		//FIXME : replace or remove this sound
-		S_StartSound (pos, 0, 0, cl_sfx_lashit, 1, ATTN_NORM, 0);
+		S_StartSound (pos, 0, 0, cl_sfx_lashit, 1, ATTN_NORM, 0); 
 		break;
 
 	case TE_TRACKER_EXPLOSION:
