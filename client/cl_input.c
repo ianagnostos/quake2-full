@@ -473,7 +473,7 @@ void CL_InitInput (void)
 	Cmd_AddCommand("-attack2", IN_Attack2Up);
 	Cmd_AddCommand("+ability", IN_AbilityDown);
 	Cmd_AddCommand("-ability", IN_AbilityUp);
-	Cmd_AddCommand("+abilty2", IN_Ability2Down);
+	Cmd_AddCommand("+ability2", IN_Ability2Down);
 	Cmd_AddCommand("-ability2", IN_Ability2Up);
 
 	cl_nodelta = Cvar_Get ("cl_nodelta", "0", 0);

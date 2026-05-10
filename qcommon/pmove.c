@@ -811,15 +811,22 @@ void PM_CheckJump (void)
 		return;
 	}
 
-	if (pm->groundentity == NULL)
-		return;		// in air, so no effect
+	if (!pm->groundentity)
+	{
+		if (pm->char_select == 1 && pm->jumps > 0 && pm->cmd.upmove)
+		{
+			pm->s.pm_flags |= PMF_JUMP_HELD;
+			pml.velocity[2] += 270;
+			pm->jumps--;
+		}
+		return;
+	}
+
 
 	pm->s.pm_flags |= PMF_JUMP_HELD;
-
 	pm->groundentity = NULL;
 	pml.velocity[2] += 270;
-	if (pml.velocity[2] < 270)
-		pml.velocity[2] = 270;
+
 }
 
 

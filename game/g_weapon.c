@@ -1228,18 +1228,64 @@ void fire_chainjail(edict_t* self, vec3_t start, vec3_t dir, float speed)
 	gi.linkentity(bind);
 }
 
-/*void bomb_explode(edict_t* ent)
+void ClusterBomb_Explode(edict_t* self)
 {
-	edict_t* target;
+	int i, count;
 	vec3_t dir;
 
-	if (!ent)
+	if (!self->inuse)
 		return;
 
 	gi.WriteByte(svc_temp_entity);
 	gi.WriteByte(TE_EXPLOSION1);
-	gi.WritePosition(ent->bomb_owner->s.origin);
-	gi.multicast(ent->bomb_owner->s.origin, MULTICAST_PVS);
+	gi.WritePosition(self->s.origin);
+	gi.multicast(self->s.origin, MULTICAST_PVS);
+	gi.sound(self, CHAN_WEAPON, gi.soundindex("weapons/rocklx1a.wav"), 1, ATTN_NORM, 0);
 
-	if(ent->bomb_owner)
-}*/
+	T_RadiusDamage(self, self->owner, 30, self->owner, 80, MOD_HIT);
+
+	count = 3 + (rand() & 2);
+	for (i = 0; i < count;i++)
+	{
+		dir[0] = crandom();
+		dir[1] = crandom();
+		dir[2] = crandom() * 0.5f + 0.5f;
+		VectorNormalize(dir);
+
+		fire_grenade(self->owner, self->s.origin, dir, 25, 300, 1.5f, 80);
+	}
+
+	G_FreeEdict(self);
+}
+
+void fire_cluster(edict_t* self, vec3_t start, vec3_t dir, int damage)
+{
+	edict_t* cluster;
+	cluster = G_Spawn();
+	cluster->owner = self;
+	cluster->movetype = MOVETYPE_BOUNCE;
+	cluster->clipmask = MASK_SHOT;
+	cluster->solid = SOLID_BBOX;
+	cluster->s.effects |= EF_GRENADE;
+
+	VectorClear(cluster->mins);
+	VectorClear(cluster->maxs);
+
+	cluster->s.modelindex = gi.modelindex("models/objects/grenade/tris.md2");
+	VectorCopy(start, cluster->s.origin);
+
+	VectorScale(dir, 500.0f, cluster->velocity);
+	cluster->velocity[2] += 200.0f;
+	VectorSet(cluster->avelocity, 300, 300, 300);
+
+	cluster->touch = Grenade_Touch;
+	cluster->think = ClusterBomb_Explode;
+	cluster->nextthink = level.time + 2.0f;
+
+	cluster->dmg = damage;
+	cluster->dmg_radius = 80;
+	gi.sound(self, CHAN_WEAPON, gi.soundindex("weapons/hgrenb1a.wav"), 1, ATTN_NORM, 0);
+	PlayerNoise(self, start, PNOISE_WEAPON);
+	gi.linkentity(cluster);
+
+}

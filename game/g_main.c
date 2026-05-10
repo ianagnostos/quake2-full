@@ -439,6 +439,37 @@ void G_RunFrame (void)
 				Countdown_Explode(ent);
 		}
 
+		if (ent->healing)
+		{
+			if (level.time >= ent->healing_end)
+				ent->healing = false;
+			else if (level.time >= ent->healing)
+			{
+				if (ent->health < ent->max_health)
+				{
+					ent->health += 5;
+					if (ent->health > ent->max_health)
+						ent->health = ent->max_health;
+
+					gi.WriteByte(svc_temp_entity);
+					gi.WriteByte(TE_BFG_LASER);
+					gi.WritePosition(ent->s.origin);
+					gi.WritePosition(ent->s.origin);
+					gi.multicast(ent->s.origin, MULTICAST_PVS);
+				}
+				ent->healing_next = level.time + 0.5f;
+			}
+		}
+
+		if (ent->nen_vow_active && level.time >= ent->nen_vow_end)
+		{
+			ent->nen_vow_active = false;
+			ent->max_health = ent->base_health;
+
+			T_Damage(ent, ent, ent, vec3_origin, ent->s.origin, vec3_origin, 999, 0, DAMAGE_NO_KNOCKBACK, MOD_HIT);
+			ent->jumps = 1;
+		}
+
 		if (i > 0 && i <= maxclients->value)
 		{
 			ClientBeginServerFrame (ent);

@@ -1116,15 +1116,20 @@ struct edict_s
 	int bounce;
 	int bounceCount;
 
-	int char_select;
+	int char_select, jumps;
 
 	//gon
 	float charge_time;
 	qboolean isCharging;
 
+	qboolean nen_vow_active;
+	float nen_vow_end, base_health;
+
 	//killua
 	float zap_buffer_time;
-	float palm_hold_time;
+	float palm_hold_time, dash_cooldown;
+	qboolean goodspeed;
+	float goodspeed_end, goodspeed_cooldown;
 
 	//hiskoa
 	edict_t* homing;
@@ -1141,9 +1146,15 @@ struct edict_s
 	qboolean    chained;
 	float       chain_jail_endtime;
 
+	qboolean healing;
+	float healing_end, healing_cooldown, healing_next;
+
+	edict_t* grapple;
+	qboolean pulling;
+
 	//genthru
 	qboolean has_bomb, bomb_used;
-	float countdown_endtime, detonator_buffer;
+	float countdown_endtime, detonator_buffer, bomdrush_cooldown;
 	edict_t* bomb_owner;
 };
 

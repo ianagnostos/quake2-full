@@ -504,6 +504,13 @@ void player_die (edict_t *self, edict_t *inflictor, edict_t *attacker, int damag
 
 	VectorClear (self->avelocity);
 
+	if (self->nen_vow_active)
+	{
+		self->nen_vow_active = false;
+		self->max_health = self->base_health;
+		self->jumps = 1;
+	}
+
 	self->takedamage = DAMAGE_YES;
 	self->movetype = MOVETYPE_TOSS;
 
@@ -1638,8 +1645,22 @@ void ClientThink (edict_t *ent, usercmd_t *ucmd)
 		pm.trace = PM_trace;	// adds default parms
 		pm.pointcontents = gi.pointcontents;
 
+		pm.char_select = ent->char_select;
+		pm.jumps = ent->jumps;
+
 		// perform a pmove
 		gi.Pmove (&pm);
+
+		ent->jumps = pm.jumps;
+
+		if (pm.groundentity && ent->char_select == 1)
+		{
+			if(ent->nen_vow_active)
+				ent->jumps = 2;
+			else
+				ent->jumps = 1;
+
+		}
 
 		// save results of pmove
 		client->ps.pmove = pm.s;
@@ -1647,9 +1668,54 @@ void ClientThink (edict_t *ent, usercmd_t *ucmd)
 
 		for (i=0 ; i<3 ; i++)
 		{
-			ent->s.origin[i] = pm.s.origin[i]*0.125;
-			ent->velocity[i] = pm.s.velocity[i]*0.125;
+				ent->s.origin[i] = pm.s.origin[i] * 0.125;
+				ent->velocity[i] = pm.s.velocity[i] * 0.125;
 		}
+
+		if (ent->char_select == 2 && (client->latched_buttons & BUTTON_ABILITY) && level.time >= ent->dash_cooldown)
+		{
+			vec3_t forward, right, up, dashdir;
+			float speed;
+
+			AngleVectors(client->v_angle, forward, right, NULL);
+			forward[2] = 0;
+			right[2] = 0;
+			VectorNormalize(forward);
+			VectorNormalize(right);
+
+			VectorClear(dashdir);
+
+			if (ucmd->forwardmove > 0)
+				VectorMA(dashdir, 200.0f, forward, dashdir);
+			else if (ucmd->forwardmove < 0)
+				VectorMA(dashdir, -200.0f, forward, dashdir);
+
+			if (ucmd->sidemove > 0)
+				VectorMA(dashdir, 200.0f, right, dashdir);
+			else if (ucmd->sidemove < 0)
+				VectorMA(dashdir, -200.0f, right, dashdir);
+
+			if (VectorLength(dashdir) == 0)
+				VectorCopy(forward, dashdir);
+
+			VectorNormalize(dashdir);
+
+			speed = 900.0f;
+			VectorScale(dashdir, speed, ent->velocity);
+			ent->velocity[2] = 150;
+
+			ent->dash_cooldown = ent->goodspeed ? level.time : level.time + 5.0f;
+
+			gi.sound(ent, CHAN_BODY, gi.soundindex("world/spark5.wav"), 1, ATTN_NORM, 0);
+			client->latched_buttons &= ~BUTTON_ABILITY;
+		}
+	
+		if (ent->goodspeed && level.time >= ent->goodspeed_end)
+			ent->goodspeed= false;
+
+		if (ent->char_select == 4 && (client->buttons & BUTTON_ABILITY))
+			ent->velocity[2] = 0;
+
 
 		VectorCopy (pm.mins, ent->mins);
 		VectorCopy (pm.maxs, ent->maxs);
@@ -1711,9 +1777,7 @@ void ClientThink (edict_t *ent, usercmd_t *ucmd)
 	// save light level the player is standing on for
 	// monster sighting AI
 	ent->light_level = ucmd->lightlevel;
-
-	if (ucmd->buttons)
-		gi.dprintf("buttons = %d\n", ucmd->buttons); 
+ 
 
 	// fire weapon from final position if needed
 	if (client->latched_buttons & BUTTON_ATTACK)

@@ -942,6 +942,12 @@ void Jajaken_rock(edict_t* ent)
 	damage = 10 + (charge * 25);
 	kick = 100 + (charge * 100);
 
+	if (ent->nen_vow_active)
+	{
+		damage *= 3;
+		kick *= 2;
+	}
+
 	AngleVectors(ent->client->v_angle, forward, right, NULL);
 
 	VectorCopy(ent->s.origin, start);
@@ -991,6 +997,24 @@ void Jajaken_rock(edict_t* ent)
 
 void Character_Gon(edict_t* ent, int* pause_frames, int* fire_frames)
 {
+	
+	if (ent->client->latched_buttons & BUTTON_ABILITY)
+	{
+		ent->client->latched_buttons &= ~BUTTON_ABILITY;
+		if (!ent->nen_vow_active)
+		{
+			ent->nen_vow_active = true;
+			ent->nen_vow_end = level.time + 30.0f;
+
+			ent->base_health = ent->max_health;
+			ent->max_health = ent->max_health * 2;
+			ent->health = ent->max_health;
+
+			ent->jumps = 2;
+		}
+		return;
+	}
+	
 	if (ent->client->buttons & BUTTON_ATTACK2)
 	{
 		Fishing_Hook(ent);
@@ -1045,7 +1069,10 @@ void Thunderbolt(edict_t* ent)
 	if (level.time < ent->zap_buffer_time)
 		return;
 
-	ent->zap_buffer_time = level.time + 0.2f;
+	if(ent->goodspeed)
+		ent->zap_buffer_time = level.time + 0.1f;
+	else
+		ent->zap_buffer_time = level.time + 0.2f;
 
 	AngleVectors(ent->client->v_angle, forward, right, NULL);
 	VectorNormalize(forward);
@@ -1147,6 +1174,17 @@ void Lightning_Palm(edict_t* ent)
 void Character_Killua(edict_t* ent, int* pause_frames, int* fire_frames)
 {
 	float palm_held;
+
+	if (ent->client->buttons & BUTTON_ABILITY2)
+	{
+		ent->client->latched_buttons &= ~BUTTON_ABILITY2;
+		if (level.time >= ent->goodspeed_cooldown)
+		{
+			ent->goodspeed = true;
+			ent->goodspeed_end = level.time + 8.0f;
+			ent->goodspeed_cooldown = level.time + 25.0f;
+		}
+	}
 
 	if (ent->client->buttons & BUTTON_ATTACK2)
 	{
@@ -1329,8 +1367,66 @@ void Chain_jail(edict_t* ent)
 	PlayerNoise(ent, start, PNOISE_WEAPON);
 }
 
+void Chain_grapple(edict_t* ent)
+{
+	vec3_t forward, right, start, end, pull;
+	trace_t t;
+
+	if (!ent)
+		return;
+
+	AngleVectors(ent->client->v_angle, forward, right, NULL);
+	VectorCopy(ent->s.origin, start);
+	start[2] += ent->viewheight;
+	VectorMA(start, 1024, forward, end);
+
+	t = gi.trace(start, NULL, NULL, end, ent, MASK_SHOT);
+
+	if (t.fraction < 1.0)
+	{
+		VectorSubtract(t.endpos, ent->s.origin, pull);
+		VectorNormalize(pull);
+		VectorScale(pull, 900.0f, ent->velocity);
+		ent->velocity[2] += 150.0f;
+
+		gi.sound(ent, CHAN_WEAPON, gi.soundindex("wepaons/lashit.wav"), 1, ATTN_NORM, 0);
+		PlayerNoise(ent, start, PNOISE_WEAPON);
+	}
+
+	gi.WriteByte(svc_temp_entity);
+	gi.WriteByte(TE_BFG_LASER);
+	gi.WritePosition(start);
+	gi.WritePosition(t.endpos);
+	gi.multicast(ent->s.origin, MULTICAST_PHS);
+
+	ent->client->kick_angles[0] = -2;
+}
+
 void Character_Kurapika(edict_t* ent, int* pause_frames, int* fire_frames)
 {
+	if (ent->client->latched_buttons & BUTTON_ABILITY2)
+	{
+		ent->client->latched_buttons &= ~BUTTON_ABILITY2;
+		Chain_grapple(ent);
+		return;
+	}
+
+
+	if (ent->client->latched_buttons & BUTTON_ABILITY)
+	{
+		ent->client->latched_buttons &= ~BUTTON_ABILITY;
+		if (level.time >= ent->healing_cooldown)
+		{
+			ent->healing = true;
+			ent->healing_end = level.time + 5.0f;
+			ent->healing_cooldown = level.time + 25.0f;
+			ent->healing_next = level.time;
+		}
+		else
+			gi.sound(ent, CHAN_VOICE, gi.soundindex("weapons/noammo.wav"), 1, ATTN_NORM, 0);
+
+		return;
+	}
 
 	if (ent->client->latched_buttons & BUTTON_ATTACK2)
 	{
@@ -1461,20 +1557,70 @@ void Detonator(edict_t* ent)
 	}
 }
 
+void Bomb_Rush(edict_t* ent)
+{
+	int     i;
+	float   angle;
+	vec3_t  dir, start;
+
+	VectorCopy(ent->s.origin, start);
+	start[2] += 16;
+
+	for (i = 0; i < 8; i++)
+	{
+		angle = (M_PI * 2.0f) * ((float)i / 8.0f); 
+
+		dir[0] = cos(angle);
+		dir[1] = sin(angle);
+		dir[2] = 0;
+
+		VectorNormalize(dir);
+		fire_grenade(ent, start, dir, 20, 400, 2.5f, 120);
+	}
+
+	gi.sound(ent, CHAN_WEAPON, gi.soundindex("weapons/hgrenb1a.wav"), 1, ATTN_NORM, 0);
+	PlayerNoise(ent, ent->s.origin, PNOISE_WEAPON);
+}
+
+void Cluster_shot(edict_t* ent)
+{
+	vec3_t forward, right, start, offset;
+
+	AngleVectors(ent->client->v_angle, forward, right, NULL);
+	VectorSet(offset, 24, 8, ent->viewheight - 8);
+	P_ProjectSource(ent->client, ent->s.origin, offset, forward, right, start);
+
+	fire_cluster(ent, start, forward, 30);
+}
+
 Character_Genthru(edict_t* ent, int*  pause_frames, int* fire_frames)
 {
-	if (ent->client->latched_buttons & BUTTON_ATTACK2)
+	if (ent->client->buttons & BUTTON_ABILITY2)
 	{
-		ent->client->latched_buttons &= ~BUTTON_ATTACK2;
+		ent->client->latched_buttons &= ~BUTTON_ABILITY2;
 		if (level.time >= ent->next_burst)
-		{ 
-			Little_flower(ent); 
+		{
+			Little_flower(ent);
 			ent->next_burst = level.time + 2.0f;
 		}
 		else
 		{
 			gi.sound(ent, CHAN_VOICE, gi.soundindex("weapons/noammo.wav"), 1, ATTN_NORM, 0);
 		}
+		ent->client->ps.gunframe = 4;
+		ent->client->weaponstate = WEAPON_READY;
+		return;
+	}
+
+	if (ent->client->latched_buttons & BUTTON_ATTACK2)
+	{
+		ent->client->latched_buttons &= ~BUTTON_ATTACK2;
+		if (level.time >= ent->next_burst)
+		{
+			Cluster_shot(ent);
+			ent->next_burst = level.time + 1.5f;
+		}
+		
 		ent->client->ps.gunframe = 4;
 		ent->client->weaponstate = WEAPON_READY;
 		return;

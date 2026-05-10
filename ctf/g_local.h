@@ -1137,6 +1137,8 @@ struct edict_s
 	// common data blocks
 	moveinfo_t		moveinfo;
 	monsterinfo_t	monsterinfo;
+
+	int char_select, jumps;
 };
 
 //ZOID

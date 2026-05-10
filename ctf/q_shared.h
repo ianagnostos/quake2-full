@@ -540,6 +540,8 @@ typedef struct
 	int			watertype;
 	int			waterlevel;
 
+	int char_select, jumps;
+
 	// callbacks to test the world
 	trace_t		(*trace) (vec3_t start, vec3_t mins, vec3_t maxs, vec3_t end);
 	int			(*pointcontents) (vec3_t point);
