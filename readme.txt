@@ -1,29 +1,45 @@
+This is my Hunter x Hunter Character Mod for Quake 2
 
-This is the complete source code for Quake 2, version 3.19, buildable with
-visual C++ 6.0.  The linux version should be buildable, but we haven't
-tested it for the release.
+How to Play:
+- copy the folder named "yianni" in this repo and paste it into C:\Program Files (x86)\Steam\steamapps\common\Quake 2
+- In this repo go into the folder named "release" and copy quake2.exe and paste it into C:\Program Files (x86)\Steam\steamapps\common\Quake 2
+- Launch quake2.exe with the added command +set game "yianni" and enjoy
 
-The code is all licensed under the terms of the GPL (gnu public license).  
-You should read the entire license, but the gist of it is that you can do 
-anything you want with the code, including sell your new version.  The catch 
-is that if you distribute new binary versions, you are required to make the 
-entire source code available for free to everyone.
+Characters and Keybinds:
 
-The primary intent of this release is for entertainment and educational 
-purposes, but the GPL does allow commercial exploitation if you obey the 
-full license.  If you want to do something commercial and you just can't bear 
-to have your source changes released, we could still negotiate a separate 
-license agreement (for $$$), but I would encourage you to just live with the 
-GPL.
+Gon
+- LMB - Jajaken Rock - Chargeable Melee attack that lunges the player forward when then punch
+- RMB - Fishing Rod - Hold to drag reel enemies towards you
+- Q - Nen Vow - Gain immense power, but at a cost 
+- Space - Double Jump
 
-All of the Q2 data files remain copyrighted and licensed under the 
-original terms, so you cannot redistribute data from the original game, but if 
-you do a true total conversion, you can create a standalone game based on 
-this code.
+Killua
+- LMB - Thunderbolt - Medium ranged continuous electric attack
+- RMB - Lightning Palm - Insta-kill enemies by holding a melee attack for 2 seconds without losing your target
+- Q - Dash - Dash in the direction the player is moving
+- F - Godspeed - Dash Cooldown reduced and Thunderbolt attack rate increased 2x
 
-Thanks to Robert Duffy for doing the grunt work of building this release.
+Kurapika
+- LMB - Chain Strike - Fire a Chain that returns back to you, deal extra damage on the way back
+- RMB - Chain Jail - Fire a chain projectile that freezes any enemy that has already been struck by your chain
+- Q - Healing Chain - Self over-time heal
+- F - Chain Grapple - Grapple yourself in any direction
 
-John Carmack
-Id Software
+Hisoka
+- LMB - Card Toss - Fire a burst of three cards
+- RMB - Homing Shots - Hit an enemy to mark them, all cards will now home to this enemy
+- Q - Float - Press and hold Q to float midair
+- F - Bungee Gum Trap - Throw and trap on the ground that traps any enemy that runs through it 
 
+Genthru
+- LMB - Detonate - Reduce an enemies bomb timer by 5 seconds
+- RMB - Cluster Bomb - throw a grenade that explodes into more grenades
+- Q - Countdown - Plant an invisible bomb on an enemy with a 10 second fuse, can damage other enemies
+- F - Little Flower - short range explosion that deals damage and launches you backwards
+
+F1 - IN GAME HELP SCREEN 
+
+CHAR SELECT
+- ARROW KEYS TO CHOOSE
+- ENTER TO SELECT
 
