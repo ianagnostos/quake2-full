@@ -1058,7 +1058,7 @@ void Chain_touch(edict_t* self, edict_t* other, cplane_t* plane, csurface_t* sur
 		self->enemy = other;
 		other->chain_struck = true;
 		airtime = level.time - self->chain_released;
-		dmg = (1 + (int)(airtime * 10.0f)) * 2;
+		dmg = (1 + (int)(airtime * 10.0f)) * 4;
 		if (dmg > 25)
 			dmg = 25;
 
@@ -1288,4 +1288,72 @@ void fire_cluster(edict_t* self, vec3_t start, vec3_t dir, int damage)
 	PlayerNoise(self, start, PNOISE_WEAPON);
 	gi.linkentity(cluster);
 
+}
+
+void trap_trigger(edict_t* self, edict_t* other, cplane_t* plane, csurface_t* surf) 
+{
+	if (!other || !other->inuse || other == self->owner)
+		return;
+
+	VectorClear(other->velocity);
+
+	other->nextthink = level.time + 5.0f;
+}
+
+void trap_touch(edict_t* self, edict_t* other, cplane_t* plane, csurface_t* surf)
+{
+	if (!self->inuse || other == self->owner) 
+		return;
+
+	if (!other->takedamage)
+	{
+		self->movetype = MOVETYPE_NONE;
+		self->solid = SOLID_TRIGGER;
+		VectorClear(self->velocity);
+		VectorSet(self->mins, -16, -16, -16);
+		VectorSet(self->maxs, 16, 16, 16);
+
+
+		self->touch = trap_trigger;
+		self->think = G_FreeEdict;
+		self->nextthink = level.time + 30.0f;
+
+		gi.linkentity(self);
+		return;
+	}
+	else
+	{
+		G_FreeEdict(self);
+		return;
+	}
+}
+
+void fire_trap(edict_t* self, vec3_t start, vec3_t dir)
+{
+	edict_t* trap;
+
+	trap = G_Spawn();
+	trap->owner = self;
+	trap->movetype = MOVETYPE_BOUNCE;
+	trap->clipmask = MASK_SHOT;
+	trap->solid = SOLID_BBOX;
+	trap->s.effects |= EF_GRENADE;
+
+	VectorSet(trap->mins, -4, -4, -4);
+	VectorSet(trap->maxs, 4, 4, 4);
+
+	trap->s.modelindex = gi.modelindex("models/objects/grenade/tris.md2");
+	VectorCopy(start, trap->s.origin);
+
+	VectorScale(dir, 500.0f, trap->velocity);
+	trap->velocity[2] += 200.0f;
+	VectorSet(trap->avelocity, 300, 300, 300);
+
+	trap->touch = trap_touch;
+	trap->think = G_FreeEdict;
+	trap->nextthink = level.time + 5.0f;
+
+	gi.sound(self, CHAN_WEAPON, gi.soundindex("weapons/hgrenb1a.wav"), 1, ATTN_NORM, 0);
+	PlayerNoise(self, start, PNOISE_WEAPON);
+	gi.linkentity(trap);
 }

@@ -1291,8 +1291,31 @@ void Card_homing(edict_t* ent)
 	}
 }
 
+void Bungee_Trap(edict_t* ent)
+{
+	vec3_t forward, right, start, offset;
+
+	AngleVectors(ent->client->v_angle, forward, right, NULL);
+	VectorSet(offset, 24, 8, ent->viewheight - 8);
+	P_ProjectSource(ent->client, ent->s.origin, offset, forward, right, start);
+
+	fire_trap(ent, start, forward);
+}
+
 void Character_Hisoka(edict_t* ent, int* pause_frames, int* fire_frames)
 {
+	if ((ent->client->latched_buttons & BUTTON_ABILITY2) && ent->next_trap_time <= level.time)
+	{
+		ent->client->latched_buttons &= ~BUTTON_ABILITY2;
+		Bungee_Trap(ent);
+		ent->next_trap_time = level.time + 20.0f;
+		ent->client->ps.gunframe = 4;
+		ent->client->weaponstate = WEAPON_READY;
+		return;
+
+	}
+	
+	
 	if (ent->client->latched_buttons & BUTTON_ATTACK2)
 	{
 		ent->client->latched_buttons &= ~BUTTON_ATTACK2;
@@ -1503,7 +1526,8 @@ void Countdown(edict_t* ent)
 	if (t.ent && t.ent->takedamage && t.ent != ent)
 	{
 		t.ent->has_bomb = true;
-		t.ent->countdown_endtime = level.time + 5.0f; 
+		t.ent->countdown_endtime = level.time + 10.0f;
+		ent->genthru_timer = level.time + 10.0f;
 		t.ent->bomb_owner = ent;
 
 		ent->bomb_used = true;
@@ -1524,7 +1548,7 @@ void Detonator(edict_t* ent)
 	vec3_t  box_min, box_max;
 	trace_t t;
 
-	if (ent->bomb_used)
+	if (!ent->bomb_used)
 	{
 		gi.sound(ent, CHAN_VOICE, gi.soundindex("weapons/noammo.wav"), 1, ATTN_NORM, 0);
 		return;
@@ -1545,6 +1569,7 @@ void Detonator(edict_t* ent)
 		if (t.ent->has_bomb)
 		{
 			t.ent->countdown_endtime = t.ent->countdown_endtime - 5.0f;
+			ent->genthru_timer = ent->genthru_timer - 5.0f;
 			t.ent->detonator_buffer = level.time + 2.0f;
 
 		}
@@ -1555,31 +1580,6 @@ void Detonator(edict_t* ent)
 	{
 		gi.sound(ent, CHAN_VOICE, gi.soundindex("weapons/noammo.wav"), 1, ATTN_NORM, 0);
 	}
-}
-
-void Bomb_Rush(edict_t* ent)
-{
-	int     i;
-	float   angle;
-	vec3_t  dir, start;
-
-	VectorCopy(ent->s.origin, start);
-	start[2] += 16;
-
-	for (i = 0; i < 8; i++)
-	{
-		angle = (M_PI * 2.0f) * ((float)i / 8.0f); 
-
-		dir[0] = cos(angle);
-		dir[1] = sin(angle);
-		dir[2] = 0;
-
-		VectorNormalize(dir);
-		fire_grenade(ent, start, dir, 20, 400, 2.5f, 120);
-	}
-
-	gi.sound(ent, CHAN_WEAPON, gi.soundindex("weapons/hgrenb1a.wav"), 1, ATTN_NORM, 0);
-	PlayerNoise(ent, ent->s.origin, PNOISE_WEAPON);
 }
 
 void Cluster_shot(edict_t* ent)

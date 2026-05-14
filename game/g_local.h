@@ -736,6 +736,8 @@ void fire_bfg (edict_t *self, vec3_t start, vec3_t dir, int damage, int speed, f
 void fire_card(edict_t* ent, vec3_t start, vec3_t dir, int damage);
 void fire_chain(edict_t* self, vec3_t start, vec3_t dir, int damage, float speed, float maxrange);
 void fire_chainjail(edict_t* self, vec3_t start, vec3_t dir, float speed);
+void fire_cluster(edict_t* self, vec3_t start, vec3_t dir, int damage);
+void fire_trap(edict_t* self, vec3_t start, vec3_t dir);
 
 //
 // g_ptrail.c
@@ -1133,8 +1135,8 @@ struct edict_s
 
 	//hiskoa
 	edict_t* homing;
-	qboolean burst_fire;
-	float next_burst;
+	qboolean burst_fire, gum_out;
+	float next_burst, next_trap_time;
 	int burst_count; 
 
 	//kurapika
@@ -1154,7 +1156,7 @@ struct edict_s
 
 	//genthru
 	qboolean has_bomb, bomb_used;
-	float countdown_endtime, detonator_buffer, bomdrush_cooldown;
+	float countdown_endtime, detonator_buffer, bomdrush_cooldown, genthru_timer;
 	edict_t* bomb_owner;
 };
 

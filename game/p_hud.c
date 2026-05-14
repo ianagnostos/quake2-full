@@ -302,37 +302,93 @@ Draw help computer.
 void HelpComputer (edict_t *ent)
 {
 	char	string[1024];
-	char	*sk;
 
-	if (skill->value == 0)
-		sk = "easy";
-	else if (skill->value == 1)
-		sk = "medium";
-	else if (skill->value == 2)
-		sk = "hard";
-	else
-		sk = "hard+";
+	switch (ent->char_select)
+	{
+	case 1:
+		Com_sprintf(string, sizeof(string),
+			"xv 32 yv 8 picn inventory "
+			"xv 0 yv 24 cstring2 \"GON\" "
+			"xv 0 yv 40 cstring2 \"LMB - Jajanken Rock\" "
+			"xv 0 yv 50 cstring2 \"Hold to charge, release to punch\" "
+			"xv 0 yv 64 cstring2 \"RMB - Fishing Hook\" "
+			"xv 0 yv 74 cstring2 \"Hold to pull enemies toward you\" "
+			"xv 0 yv 88 cstring2 \"Q - Nen Vow\" "
+			"xv 0 yv 98 cstring2 \"30s power boost, but at a cost\" "
+			"xv 0 yv 112 cstring2 \"SPACE - Double Jump\" "
+		);
+		break;
 
-	// send the layout
-	Com_sprintf (string, sizeof(string),
-		"xv 32 yv 8 picn help "			// background
-		"xv 202 yv 12 string2 \"%s\" "		// skill
-		"xv 0 yv 24 cstring2 \"%s\" "		// level name
-		"xv 0 yv 54 cstring2 \"%s\" "		// help 1
-		"xv 0 yv 110 cstring2 \"%s\" "		// help 2
-		"xv 50 yv 164 string2 \" kills     goals    secrets\" "
-		"xv 50 yv 172 string2 \"%3i/%3i     %i/%i       %i/%i\" ", 
-		sk,
-		level.level_name,
-		game.helpmessage1,
-		game.helpmessage2,
-		level.killed_monsters, level.total_monsters, 
-		level.found_goals, level.total_goals,
-		level.found_secrets, level.total_secrets);
+	case 2:
+		Com_sprintf(string, sizeof(string),
+			"xv 32 yv 8 picn inventory "
+			"xv 0 yv 24 cstring2 \"KILLUA\" "
+			"xv 0 yv 40 cstring2 \"LMB - Thunderbolt\" "
+			"xv 0 yv 50 cstring2 \"Close-Range Continuous electric attack\" "
+			"xv 0 yv 64 cstring2 \"RMB - Lightning Palm\" "
+			"xv 0 yv 74 cstring2 \"Hold near enemy for 2 seconds, release to assassinate\" "
+			"xv 0 yv 88 cstring2 \"F - Godspeed\" "
+			"xv 0 yv 98 cstring2 \"Faster dash recharge and thunderbolt shot time\" "
+			"xv 0 yv 112 cstring2 \"Q - Dash\" "
+		);
+		break;
 
-	gi.WriteByte (svc_layout);
-	gi.WriteString (string);
-	gi.unicast (ent, true);
+	case 3:
+		Com_sprintf(string, sizeof(string),
+			"xv 32 yv 8 picn inventory "
+			"xv 0 yv 24 cstring2 \"KURAPIKA\" "
+			"xv 0 yv 40 cstring2 \"LMB - Chain Strike\" "
+			"xv 0 yv 50 cstring2 \"Returning chain projectile, critcal on way back\" "
+			"xv 0 yv 64 cstring2 \"RMB - Chain Jail\" "
+			"xv 0 yv 74 cstring2 \"Roots enemies struck by chain\" "
+			"xv 0 yv 88 cstring2 \"Q - Healing Chain\" "
+			"xv 0 yv 98 cstring2 \"Self heal\" "
+			"xv 0 yv 112 cstring2 \"F - Chain Grapple\" "
+			"xv 0 yv 122 cstring2 \"Grapple toward surface or enemy\" "
+		);
+		break;
+
+	case 4:
+		Com_sprintf(string, sizeof(string),
+			"xv 32 yv 8 picn inventory "
+			"xv 0 yv 24 cstring2 \"HISOKA\" "
+			"xv 0 yv 40 cstring2 \"LMB - Card Burst\" "
+			"xv 0 yv 50 cstring2 \"3 card burst\" "
+			"xv 0 yv 64 cstring2 \"RMB - Homing Card\" "
+			"xv 0 yv 74 cstring2 \"Aim and hit enemy to home projectiles\" "
+			"xv 0 yv 88 cstring2 \"Q - Bungee Gum Trap\" "
+			"xv 0 yv 98 cstring2 \"Sticky zone pulls enemies in\" "
+			"xv 0 yv 112 cstring2 \"Space - Float\" "
+		);
+		break;
+
+	case 5:
+		Com_sprintf(string, sizeof(string),
+			"xv 32 yv 8 picn inventory "
+			"xv 0 yv 24 cstring2 \"GENTHRU\" "
+			"xv 0 yv 40 cstring2 \"LMB - Detonate\" "
+			"xv 0 yv 50 cstring2 \"Lower Countdown fuse time on hit\" "
+			"xv 0 yv 64 cstring2 \"RMB - Cluster Shot\" "
+			"xv 0 yv 74 cstring2 \"Grenade that releases more grenades\" "
+			"xv 0 yv 88 cstring2 \"Q - Countdown\" "
+			"xv 0 yv 98 cstring2 \"Plant an invisible bomb with a fuse on an enemy\" "
+			"xv 0 yv 112 cstring2 \"F - Blast Jump\" "
+			"xv 0 yv 122 cstring2 \"Deal damage and evade enemies\" "
+		);
+		break;
+
+	default:
+		Com_sprintf(string, sizeof(string),
+			"xv 32 yv 8 picn inventory "
+			"xv 0 yv 24 cstring2 \"No character selected\" "
+			"xv 0 yv 40 cstring2 \"Return to character select\" "
+		);
+		break;
+	}
+
+	gi.WriteByte(svc_layout);
+	gi.WriteString(string);
+	gi.unicast(ent, true);
 }
 
 
@@ -508,9 +564,6 @@ void G_SetStats (edict_t *ent)
 	//
 	ent->client->ps.stats[STAT_FRAGS] = ent->client->resp.score;
 
-	//
-	// help icon / current weapon if not shown
-	//
 	if (ent->client->pers.helpchanged && (level.framenum&8) )
 		ent->client->ps.stats[STAT_HELPICON] = gi.imageindex ("i_help");
 	else if ( (ent->client->pers.hand == CENTER_HANDED || ent->client->ps.fov > 91)
@@ -520,6 +573,35 @@ void G_SetStats (edict_t *ent)
 		ent->client->ps.stats[STAT_HELPICON] = 0;
 
 	ent->client->ps.stats[STAT_SPECTATOR] = 0;
+
+	if (ent->char_select > 0)
+	{
+		if (ent->char_select == 1 && ent->nen_vow_active)
+		{
+			ent->client->ps.stats[STAT_TIMER_ICON] = gi.imageindex("p_rebreather");
+			ent->client->ps.stats[STAT_TIMER] = (int)(ent->nen_vow_end - level.time);
+		}
+		else if (ent->char_select == 2 && ent->goodspeed)
+		{
+			ent->client->ps.stats[STAT_TIMER_ICON] = gi.imageindex("p_rebreather");
+			ent->client->ps.stats[STAT_TIMER] = (int)(ent->goodspeed_end - level.time);
+		}
+		else if (ent->char_select == 3 && ent->healing)
+		{
+			ent->client->ps.stats[STAT_TIMER_ICON] = gi.imageindex("p_rebreather");
+			ent->client->ps.stats[STAT_TIMER] = (int)(ent->healing_end - level.time);
+		}
+		else if (ent->char_select == 5 && ent->bomb_used)
+		{
+			ent->client->ps.stats[STAT_TIMER_ICON] = gi.imageindex("p_rebreather");
+			ent->client->ps.stats[STAT_TIMER] = (int)(ent->genthru_timer - level.time);
+		}
+		else if (ent->char_select == 4 && ent->next_trap_time >= level.time)
+		{
+			ent->client->ps.stats[STAT_TIMER_ICON] = gi.imageindex("p_rebreather");
+			ent->client->ps.stats[STAT_TIMER] = (int)(ent->next_trap_time - level.time);
+		}
+	}
 }
 
 /*
