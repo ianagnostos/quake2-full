@@ -74,8 +74,7 @@
               "RelativeToolTip": "game\\p_hud.c",
               "ViewState": "AgIAADgCAAAAAAAAAAAwwFkCAABPAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000423|",
-              "WhenOpened": "2026-05-13T18:58:37.072Z",
-              "EditorCaption": ""
+              "WhenOpened": "2026-05-13T18:58:37.072Z"
             },
             {
               "$type": "Document",
@@ -87,8 +86,7 @@
               "RelativeToolTip": "client\\menu.c",
               "ViewState": "AgIAALsMAAAAAAAAAIAwwFcNAAACAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000423|",
-              "WhenOpened": "2026-05-13T18:40:24.992Z",
-              "EditorCaption": ""
+              "WhenOpened": "2026-05-13T18:40:24.992Z"
             },
             {
               "$type": "Document",
@@ -100,8 +98,7 @@
               "RelativeToolTip": "qcommon\\pmove.c",
               "ViewState": "AgIAABEDAAAAAAAAAAAmwPECAAAXAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000423|",
-              "WhenOpened": "2026-05-10T03:01:36.357Z",
-              "EditorCaption": ""
+              "WhenOpened": "2026-05-10T03:01:36.357Z"
             },
             {
               "$type": "Document",
@@ -113,8 +110,7 @@
               "RelativeToolTip": "game\\p_client.c",
               "ViewState": "AgIAAPIBAAAAAAAAAAAgwBkCAAADAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000423|",
-              "WhenOpened": "2026-04-23T02:46:59.799Z",
-              "EditorCaption": ""
+              "WhenOpened": "2026-04-23T02:46:59.799Z"
             },
             {
               "$type": "Document",
@@ -126,8 +122,7 @@
               "RelativeToolTip": "game\\p_weapon.c",
               "ViewState": "AgIAAAoFAAAAAAAAAAAAAB4FAAAiAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000423|",
-              "WhenOpened": "2026-04-07T22:20:55.844Z",
-              "EditorCaption": ""
+              "WhenOpened": "2026-04-07T22:20:55.844Z"
             },
             {
               "$type": "Document",
@@ -135,8 +130,8 @@
               "Title": "g_weapon.c",
               "DocumentMoniker": "C:\\Users\\ianag\\git\\quake2-full\\game\\g_weapon.c",
               "RelativeDocumentMoniker": "game\\g_weapon.c",
-              "ToolTip": "C:\\Users\\ianag\\git\\quake2-full\\game\\g_weapon.c*",
-              "RelativeToolTip": "game\\g_weapon.c*",
+              "ToolTip": "C:\\Users\\ianag\\git\\quake2-full\\game\\g_weapon.c",
+              "RelativeToolTip": "game\\g_weapon.c",
               "ViewState": "AgIAAAYFAAAAAAAAAAAAAA4FAAA1AAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000423|",
               "WhenOpened": "2026-04-07T22:53:21.093Z",
@@ -152,8 +147,7 @@
               "RelativeToolTip": "game\\g_local.h",
               "ViewState": "AgIAAGUEAAAAAAAAAAAYwHEEAAAdAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000680|",
-              "WhenOpened": "2026-04-07T22:18:39.523Z",
-              "EditorCaption": ""
+              "WhenOpened": "2026-04-07T22:18:39.523Z"
             },
             {
               "$type": "Document",
